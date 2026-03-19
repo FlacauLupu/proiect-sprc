@@ -2,20 +2,22 @@ import { useEffect, useState } from "react";
 import Menu from "./components/Menu.tsx";
 
 const App = () => {
-  const [playerName] = useState("");
+  const [anyUserSaved, setAnyUserSaved] = useState(false);
 
   useEffect(() => {
-    return;
-    const savedPlayer = localStorage.getItem(playerName);
-    if (!savedPlayer) console.error("No player");
+    const playerName = localStorage.getItem("playerName");
+
+    if (!playerName) setAnyUserSaved(false);
     else {
-      console.log();
+      setAnyUserSaved(true);
     }
   }, []);
 
   return (
     <div className="flex h-screen w-full items-center justify-center bg-[url(background.png)]">
       <Menu></Menu>
+      {/* conditie && game */}
+      {/* conditie && dialogname */}
     </div>
   );
 };
