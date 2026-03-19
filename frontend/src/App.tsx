@@ -1,30 +1,23 @@
-import { useEffect, useState } from "react"
-import Menu from "./components/Menu.tsx"
+import { useEffect, useState } from "react";
+import Menu from "./components/Menu.tsx";
 
 const App = () => {
-
-  const [playerName,] = useState("")
+  const [playerName] = useState("");
 
   useEffect(() => {
-    return
+    return;
     const savedPlayer = localStorage.getItem(playerName);
-    if (!savedPlayer)
-      console.error("No player")
-    else
-    {
+    if (!savedPlayer) console.error("No player");
+    else {
       console.log();
     }
-  }, [])
+  }, []);
 
-  return <div className="">
+  return (
+    <div className="flex h-screen w-full items-center justify-center bg-[url(background.png)]">
+      <Menu></Menu>
+    </div>
+  );
+};
 
-    <Menu>
-
-
-
-    </Menu>
-
-  </div>
-}
-
-export default App
+export default App;
