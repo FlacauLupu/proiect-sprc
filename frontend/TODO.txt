@@ -1,0 +1,7 @@
+
+stilizeaza butoanele cu ai
+verificam daca exista un user in local storage, daca nu, randezi o componenta care il pune sa isi puna numele, apasa submit, il trimiti in meniul
+start game, daca e apasata il duce la componenta game iar jos e un buton back il duce la meniul
+butonul chaneg name, reapare dialogul modifica numele din storage si revine la main
+
+
