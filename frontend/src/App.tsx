@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Menu from "./components/Menu.tsx";
 import PlayerNameDialogue from "./components/PlayerNameDialogue.tsx";
-import Game from "./components/Game.tsx";
+import GameTab from "./components/Game.tsx";
 
 const App = () => {
 
@@ -16,7 +16,7 @@ const App = () => {
 
       {(currentTab === "menu") && <Menu setCurrentTab={setCurrentTab}/>}
       {(currentTab === "dialog") && <PlayerNameDialogue setCurrentTab={setCurrentTab}/>}
-      {(currentTab === "game") && <Game setCurrentTab={setCurrentTab}/>}
+      {(currentTab === "game") && <GameTab setCurrentTab={setCurrentTab}/>}
 
     </div>
   );
