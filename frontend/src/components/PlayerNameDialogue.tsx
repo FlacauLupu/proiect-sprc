@@ -9,24 +9,42 @@ const PlayerNameDialogue = ({setCurrentTab}: PlayerNameDialogueProps) => {
 
 
   return (
-    <div className="flex flex-col justify-between items-center">
+    <div className="h-screen flex items-center justify-center">
+      
+      <div className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl flex flex-col items-center gap-6">
+        
+        <h2 className="text-xl font-bold text-gray-800">
+          Enter your username
+        </h2>
 
-      <div className="flex flex-row justify-between">
+        <form
+          className="flex flex-col items-center gap-4 w-full"
+          onSubmit={(e) => {
+            e.preventDefault()
+            
+            localStorage.setItem("playerName", name)
+            setCurrentTab("menu")
+          }}
+        >
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your name..."
+            className="w-64 px-4 py-2 rounded-lg border border-gray-300 
+                      focus:outline-none focus:ring-2 focus:ring-sky-400"
+          />
 
-        <form className="flex flex-row justify-between" onSubmit={(e) => {
-          e.preventDefault()
-          localStorage.setItem("playerName", name)
-          setCurrentTab("menu")
-        }}>
-
-          <label htmlFor="username">Enter your Username: </label>
-          <input type="text" value={name} onChange={(e)=>{setName(e.target.value)}}/>
-          <button type="submit">Confirm</button>
-
+          <button
+            type="submit"
+            className="w-full py-2 bg-yellow-400 text-black font-bold rounded-lg shadow-md
+                      hover:bg-yellow-300 active:scale-95 transition-all"
+          >
+            Confirm
+          </button>
         </form>
 
       </div>
-
     </div>
   )
 }
