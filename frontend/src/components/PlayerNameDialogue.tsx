@@ -5,8 +5,21 @@ interface PlayerNameDialogueProps {
 }
 
 const PlayerNameDialogue = ({setCurrentTab}: PlayerNameDialogueProps) => {
-  const [name, setName] = useState("")
+  const [name, setName] = useState<string>("")
+  const [error, setError] = useState<boolean>(false)
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (name.trim() === '') {
+      setError(true);
+      return;
+    }
+
+    setError(false);
+    localStorage.setItem("platerName", name)
+    setCurrentTab("menu")
+  }
 
   return (
     <div className="h-screen flex items-center justify-center">
@@ -19,12 +32,7 @@ const PlayerNameDialogue = ({setCurrentTab}: PlayerNameDialogueProps) => {
 
         <form
           className="flex flex-col items-center gap-4 w-full"
-          onSubmit={(e) => {
-            e.preventDefault()
-            
-            localStorage.setItem("playerName", name)
-            setCurrentTab("menu")
-          }}
+          onSubmit={handleSubmit}
         >
           <input
             type="text"
@@ -34,6 +42,8 @@ const PlayerNameDialogue = ({setCurrentTab}: PlayerNameDialogueProps) => {
             className="w-64 px-4 py-2 rounded-lg border border-gray-300 
                       focus:outline-none focus:ring-2 focus:ring-sky-400"
           />
+
+          {error && <p style={{color: 'red'}}> The username can't be blank. </p>}
 
           <button
             type="submit"
