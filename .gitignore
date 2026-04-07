@@ -1,4 +1,23 @@
+# --- Frontend (React/Phaser) ---
 frontend/node_modules/
-frontend/.vscode/
-backend/obj/
-backend/bin/
+frontend/dist/
+frontend/build/
+frontend/.env
+frontend/.eslintcache
+
+# --- Backend (C#/.NET) ---
+backend/[Bb]in/
+backend/[Oo]bj/
+backend/*.lscache
+backend/*.user
+backend/*.suo
+
+# --- IDEs & Tools ---
+.vscode/
+.vs/
+.DS_Store
+*.swp
+
+# --- Logs ---
+*.log
+npm-debug.log*
