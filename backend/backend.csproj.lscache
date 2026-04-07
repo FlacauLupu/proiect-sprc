@@ -62,8 +62,10 @@ obj/Debug/net10.0/
  .NETCoreApp,Version=v10.0.AssemblyAttributes.cs
  backend.AssemblyInfo.cs
  backend.GlobalUsings.g.cs
+Program.cs
 services/Commands/
  Commands.cs
+ ManagerCommands.cs
  MovingCommands.cs
 services/Server.cs
 

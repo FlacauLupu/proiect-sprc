@@ -1,7 +1,7 @@
-using Commands;
-
-public class MovingCommands : AbstractCommands
+namespace Backend
 {
-    public const string Up = "UP";
-
+    public class MovingCommands : Commands
+    {
+        public const string Up = "UP";
+    }
 }

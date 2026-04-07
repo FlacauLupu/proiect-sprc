@@ -13,10 +13,12 @@ const GameFrame = forwardRef<GameFrameHandle, {}>((_props, ref) => {
 
   useImperativeHandle(ref, () => ({
     moveSelectedObstacle(deltaY: number) {
-      if (sceneRef.current && sceneRef.current.moveSelected) sceneRef.current.moveSelected(deltaY);
+      if (sceneRef.current && sceneRef.current.moveSelected)
+        sceneRef.current.moveSelected(deltaY);
     },
     clearSelection() {
-      if (sceneRef.current && sceneRef.current.clearSelection) sceneRef.current.clearSelection();
+      if (sceneRef.current && sceneRef.current.clearSelection)
+        sceneRef.current.clearSelection();
     },
   }));
 
@@ -63,11 +65,14 @@ const GameFrame = forwardRef<GameFrameHandle, {}>((_props, ref) => {
         this.bird.setCircle(12);
 
         this.input.on("pointerdown", this.flap, this);
-        this.input.keyboard.on("keydown-SPACE", this.flap, this);
+        this.input.keyboard?.on("keydown-SPACE", this.flap, this);
 
         this.pipes = this.add.group();
 
-        this.scoreText = this.add.text(20, 20, "Score: 0", { fontSize: "32px", color: "#fff" });
+        this.scoreText = this.add.text(20, 20, "Score: 0", {
+          fontSize: "32px",
+          color: "#fff",
+        });
 
         this.pipeTimer = this.time.addEvent({
           delay: 1400,
@@ -76,7 +81,13 @@ const GameFrame = forwardRef<GameFrameHandle, {}>((_props, ref) => {
           loop: true,
         });
 
-        this.physics.add.overlap(this.bird, this.pipes, this.hitPipe, undefined, this);
+        this.physics.add.overlap(
+          this.bird,
+          this.pipes,
+          this.hitPipe,
+          undefined,
+          this,
+        );
       }
 
       flap() {
@@ -99,7 +110,9 @@ const GameFrame = forwardRef<GameFrameHandle, {}>((_props, ref) => {
         const topHeight = centerY - gap / 2;
         const bottomHeight = height - (centerY + gap / 2);
 
-        const top = this.add.rectangle(pipeX, 0, pipeWidth, topHeight, 0x00aa00).setOrigin(0, 0);
+        const top = this.add
+          .rectangle(pipeX, 0, pipeWidth, topHeight, 0x00aa00)
+          .setOrigin(0, 0);
         // @ts-ignore
         this.physics.add.existing(top);
         const topBody = top.body as Phaser.Physics.Arcade.Body;
@@ -115,11 +128,17 @@ const GameFrame = forwardRef<GameFrameHandle, {}>((_props, ref) => {
             if (event && event.stopPropagation) event.stopPropagation();
             this.selectPipe(top);
           },
-          this
+          this,
         );
 
         const bottom = this.add
-          .rectangle(pipeX, centerY + gap / 2, pipeWidth, bottomHeight, 0x00aa00)
+          .rectangle(
+            pipeX,
+            centerY + gap / 2,
+            pipeWidth,
+            bottomHeight,
+            0x00aa00,
+          )
           .setOrigin(0, 0);
         // @ts-ignore
         this.physics.add.existing(bottom);
@@ -136,7 +155,7 @@ const GameFrame = forwardRef<GameFrameHandle, {}>((_props, ref) => {
             if (event && event.stopPropagation) event.stopPropagation();
             this.selectPipe(bottom);
           },
-          this
+          this,
         );
 
         this.pipes.add(top);
@@ -159,7 +178,10 @@ const GameFrame = forwardRef<GameFrameHandle, {}>((_props, ref) => {
           const b = this.selectedPipe.body as Phaser.Physics.Arcade.Body;
           b.y = this.selectedPipe.y;
           // keep velocity
-          b.setSize((this.selectedPipe as any).width, (this.selectedPipe as any).height);
+          b.setSize(
+            (this.selectedPipe as any).width,
+            (this.selectedPipe as any).height,
+          );
           b.setVelocityX(-200);
           // @ts-ignore
           b.updateFromGameObject();
@@ -181,7 +203,11 @@ const GameFrame = forwardRef<GameFrameHandle, {}>((_props, ref) => {
       update() {
         if (!this.bird.active) return;
 
-        this.bird.angle = Phaser.Math.Clamp((this.bird.body as Phaser.Physics.Arcade.Body).velocity.y / 6, -20, 90);
+        this.bird.angle = Phaser.Math.Clamp(
+          (this.bird.body as Phaser.Physics.Arcade.Body).velocity.y / 6,
+          -20,
+          90,
+        );
 
         this.pipes.getChildren().forEach((pipe: any) => {
           if (pipe.getData("scored")) return;
@@ -214,14 +240,19 @@ const GameFrame = forwardRef<GameFrameHandle, {}>((_props, ref) => {
         this.physics.pause();
         this.pipeTimer?.remove(false);
         this.add
-          .text(this.scale.width / 2, this.scale.height / 2, "Game Over\nClick to Restart", {
-            fontSize: "48px",
-            color: "#fff",
-            align: "center",
-          })
+          .text(
+            this.scale.width / 2,
+            this.scale.height / 2,
+            "Game Over\nClick to Restart",
+            {
+              fontSize: "48px",
+              color: "#fff",
+              align: "center",
+            },
+          )
           .setOrigin(0.5);
         this.input.once("pointerdown", () => this.scene.restart());
-        this.input.keyboard.once("keydown-SPACE", () => this.scene.restart());
+        this.input.keyboard?.once("keydown-SPACE", () => this.scene.restart());
       }
     }
 
@@ -234,7 +265,7 @@ const GameFrame = forwardRef<GameFrameHandle, {}>((_props, ref) => {
       physics: {
         default: "arcade",
         arcade: {
-          gravity: { y: 0 },
+          gravity: { x: 0, y: 0 },
           debug: false,
         },
       },
