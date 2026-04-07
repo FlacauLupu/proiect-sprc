@@ -1,10 +1,11 @@
-import {  useState } from "react"
+import { useState } from "react"
 
 interface PlayerNameDialogueProps {
-  setCurrentTab: React.Dispatch<React.SetStateAction<string>> 
+  setCurrentTab: React.Dispatch<React.SetStateAction<string>>
+  onSetUsername: (name: string) => void
 }
 
-const PlayerNameDialogue = ({setCurrentTab}: PlayerNameDialogueProps) => {
+const PlayerNameDialogue = ({ setCurrentTab, onSetUsername }: PlayerNameDialogueProps) => {
   const [name, setName] = useState<string>("")
   const [error, setError] = useState<boolean>(false)
 
@@ -17,7 +18,7 @@ const PlayerNameDialogue = ({setCurrentTab}: PlayerNameDialogueProps) => {
     }
 
     setError(false);
-    localStorage.setItem("platerName", name)
+    onSetUsername(name)
     setCurrentTab("menu")
   }
 
