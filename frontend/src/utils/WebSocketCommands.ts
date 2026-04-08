@@ -1,3 +1,5 @@
+import type { Player } from "../types/Player.ts"
+
 // Commands
 
 const CMD_LOGIN = 1;
@@ -31,10 +33,11 @@ export const dispatchLogin = (
 
         // The incoming data arrives as raw bytes, so we wrap it in Uint8Array to read it byte by byte
         const buffer = event.data as ArrayBuffer;
+        console.log("Buffer received: " + buffer.byteLength);
         const view = new Uint8Array(buffer);
 
         // Get the first byte of the response
-        const issuerId = view[0]; 
+        const issuerId = view[0];
 
         // If it's a 0, it means there has been an error
         if (issuerId === ENDING) {
@@ -43,12 +46,60 @@ export const dispatchLogin = (
         }
 
         // Else, get the part of the data depicting the player name
-        // (starting from the second byte and ending with the second to last byte)
-        const playerBytes = view.slice(1, view.length - 1);
-        const player = new TextDecoder().decode(playerBytes);
+        // (starting from the third byte and ending with the second to last byte)
+        const playerBytes = view.slice(2, view.length - 1);
+        parsePlayerPayload(playerBytes)
 
-        // Send the playerId and the player username to the client
-        onSuccess(issuerId, player);
-        console.log("Received login data from server.\nPlayer ID:", issuerId, " ,Username", player);
+        console.log("Received login data from server.");
     };
+
+    
+
 };
+
+function parsePlayerPayload(payloadBytes: Uint8Array<ArrayBuffer>): Player {
+  console.log("=== parsePlayerPayload ===");
+  console.log("Total bytes:", payloadBytes.byteLength);
+  console.log("Raw bytes:", [...payloadBytes].map(b => b.toString(16).padStart(2, '0')).join(' '));
+
+  const view = new DataView(
+    payloadBytes.buffer,
+    payloadBytes.byteOffset,
+    payloadBytes.byteLength
+  );
+
+  let offset = 0;
+
+  const id = view.getInt32(offset, true);
+  offset += 4;
+  console.log("id:", id, "| offset now:", offset);
+
+  // 7-bit length prefix
+  let usernameLength = 0;
+  let shift = 0;
+  let byte;
+  do {
+    byte = payloadBytes[offset++];
+    console.log("length-prefix byte:", byte.toString(16), "| shift:", shift);
+    usernameLength |= (byte & 0x7F) << shift;
+    shift += 7;
+  } while ((byte & 0x80) !== 0);
+
+  console.log("usernameLength:", usernameLength, "| offset now:", offset);
+  console.log("remaining bytes:", [...payloadBytes.slice(offset)].map(b => b.toString(16).padStart(2, '0')).join(' '));
+
+  const usernameBytes = payloadBytes.slice(offset, offset + usernameLength);
+  console.log("usernameBytes:", [...usernameBytes].map(b => b.toString(16).padStart(2, '0')).join(' '));
+
+  const username = new TextDecoder("utf-8").decode(usernameBytes);
+  console.log("username:", username);
+  offset += usernameLength;
+
+  const coins = payloadBytes[offset++];
+  const skill = payloadBytes[offset++];
+  console.log("coins:", coins, "skill:", skill);
+
+  const player: Player = { id, username, coins, skill };
+  localStorage.setItem("player", JSON.stringify(player));
+//   return player;
+}

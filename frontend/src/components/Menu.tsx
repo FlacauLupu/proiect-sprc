@@ -1,8 +1,13 @@
+import { useEffect } from "react";
+
 interface MenuProps {
   setCurrentTab: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const Menu = ({ setCurrentTab }: MenuProps) => {
+
+  // useEffect(() => localStorage.getItem("player") !== null ? setCurrentTab("menu") : setCurrentTab("dialog"), []);
+
   const handleChangeName = () => {
     localStorage.removeItem("playerName");
     setCurrentTab("dialog");

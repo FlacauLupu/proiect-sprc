@@ -6,7 +6,7 @@ import { initializeHandshake  } from "./utils/WebSocketConnection.ts";
 
 const App = () => {
 
-  const [currentTab, setCurrentTab] = useState("")
+  const [currentTab, setCurrentTab] = useState("dialog")
   
   const websocketRef = useRef<WebSocket | null>(null);
 
@@ -14,9 +14,12 @@ const App = () => {
     const websocket = initializeHandshake();
     websocketRef.current = websocket;
 
-    websocket.onopen = () => setCurrentTab("dialog");
+    websocket.onopen = () => console.log("Connected to server");
     websocket.onclose = () => console.log("Player disconnected");
     websocket.onerror = (e) => console.log("Error when trying to connect to server: ", e);
+
+
+    console.log("Local Storage" + localStorage.getItem("player"));
 
     // Cleanup on unmount
     return () => {
@@ -30,7 +33,7 @@ const App = () => {
     <div className="flex h-screen w-full items-center justify-center bg-[url(background.png)]">
 
       {(currentTab === "menu") && <Menu setCurrentTab={setCurrentTab}/>}
-      {(currentTab === "dialog") && <PlayerNameDialogue setCurrentTab={setCurrentTab}/>}
+      {(currentTab === "dialog") && (<PlayerNameDialogue setCurrentTab={setCurrentTab} websocketRef={websocketRef}/>)}
       {(currentTab === "game") && <GameTab setCurrentTab={setCurrentTab}/>}
 
     </div>
