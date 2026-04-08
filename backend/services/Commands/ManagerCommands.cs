@@ -2,7 +2,7 @@ namespace Backend
 {
     public class ManagerCommands : Commands
     {
-        public const string Play = "PL";
-        public const string Quit = "QT";
+        public const byte Play = 3;
+        public const byte Quit = 4;
     }
 }

@@ -2,6 +2,6 @@ namespace Backend
 {
     public class MovingCommands : Commands
     {
-        public const string Up = "UP";
+        public const byte Up = 5;
     }
 }
