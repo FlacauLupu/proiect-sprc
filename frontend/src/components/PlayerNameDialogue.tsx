@@ -1,15 +1,14 @@
-import { useState } from "react"
+import {  useState } from "react"
 
 interface PlayerNameDialogueProps {
-  setCurrentTab: React.Dispatch<React.SetStateAction<string>>
-  onSetUsername: (name: string) => void
+  setCurrentTab: React.Dispatch<React.SetStateAction<string>> 
 }
 
-const PlayerNameDialogue = ({ setCurrentTab, onSetUsername }: PlayerNameDialogueProps) => {
+const PlayerNameDialogue = ({setCurrentTab}: PlayerNameDialogueProps) => {
   const [name, setName] = useState<string>("")
   const [error, setError] = useState<boolean>(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (name.trim() === '') {
@@ -18,7 +17,7 @@ const PlayerNameDialogue = ({ setCurrentTab, onSetUsername }: PlayerNameDialogue
     }
 
     setError(false);
-    onSetUsername(name)
+    localStorage.setItem("playerName", name)
     setCurrentTab("menu")
   }
 
