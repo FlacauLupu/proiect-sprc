@@ -21,3 +21,6 @@ backend/*.suo
 # --- Logs ---
 *.log
 npm-debug.log*
+
+frontend/game.db
+backend/game.db

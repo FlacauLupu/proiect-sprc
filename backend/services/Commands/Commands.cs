@@ -1,6 +1,7 @@
 
 using System;
 using System.Text;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Backend
 {
@@ -14,44 +15,62 @@ namespace Backend
         public const string MalformedCommand = "MC";
         public const string InvalidRequest = "IR";
 
-        public const string Request = "Req";
-        public const string Deny = "Den";
-        public const string Accept = "Acc";
-        public const string Add = "Add";
-        public const string Remove = "Rem";
+        public const byte Success = 1;
+        public const byte Error = 0;
+
         public const string None = "None";
 
-
-        public static byte[] CreateMessage(string command, string issuer, string data)
+        public static byte[] CreateMessage(byte command, byte issuer, byte[] data)
         {
-            if (command == null) return Array.Empty<byte>();
-            if (data == null) data = None;
+            byte[] message = new byte[data.Length + 3];
 
-            return Encoding.Unicode.GetBytes(command + CommandDelim + issuer + IssuerDelim + data + EndMessageDelim);
+            message[0] = command;
+            message[1] = issuer;
+
+            Buffer.BlockCopy(data, 0, message, 2, data.Length);
+
+            message[message.Length - 1] = 0;
+
+            return message;
         }
 
-        public static Message DecodeMessage(string message)
+        public static Message DecodeMessage(byte[] messageBuffer)
         {
-            string[] parts = message.Split(new string[] { CommandDelim }, StringSplitOptions.None);
-
-            if (parts.Length != 3) return new Message(MalformedCommand, None, None);
-            return new Message(parts[0], parts[1], parts[2]);
-        }
-
-
-        public class Message
-        {
-            public string Command { get; set; }
-            public string Issuer { get; set; }
-            public string Data { get; set; }
-
-            public Message(string command, string issuer, string data)
+            int size = messageBuffer.Length;
+            if (messageBuffer[size - 1] != 0 || size < 3)
             {
-                this.Command = command;
-                this.Issuer = issuer;
-                this.Data = data;
+                Console.WriteLine("Error");
+
             }
+
+            byte command = messageBuffer[0];
+            byte issuer = messageBuffer[1];
+            byte[] data = new byte[size - 2];
+
+            Array.Copy(messageBuffer, 2, data, 0, size - 2);
+
+
+
+            return new Message(messageBuffer[0], messageBuffer[1], data);
         }
+    }
+    public class Message
+    {
+        public byte command;
+        public byte issuer;
+        public byte[] data;
+
+        public Message(byte command, byte issuer, byte[] data)
+        {
+            this.command = command;
+            this.issuer = issuer;
+            this.data = data;
+        }
+    }
+
+    public enum SpecialIssuers : long
+    {
+        ServerClient = 1
     }
 }
 
