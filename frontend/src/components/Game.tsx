@@ -26,7 +26,7 @@ const GameTab = ({ setCurrentTab }: GameProps) => {
                 .find((up) => up[1] === UPD_START)
                 ?.slice(2);
             if (playersRaw && playersRaw.length > 0) {
-                setIsLoading(started);
+                setIsLoading(false);
 
                 enemiesRef.current = parsePlayersPayload(playersRaw);
 
@@ -34,7 +34,7 @@ const GameTab = ({ setCurrentTab }: GameProps) => {
                 if (storedPlayer) playerRef.current = JSON.parse(storedPlayer);
             }
         }
-    }, []);
+    }, [updates]);
 
     return (
         <div className="h-screen flex flex-col items-center justify-center">
