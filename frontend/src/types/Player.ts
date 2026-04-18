@@ -3,4 +3,5 @@ export interface Player {
     username: string,
     coins: number,
     skill: number,
+    bird?: Phaser.Physics.Arcade.Sprite
 }
