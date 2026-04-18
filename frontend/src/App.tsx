@@ -1,55 +1,41 @@
 import { useState, useEffect, useRef } from "react";
-
-let handshakeInitiated = false;
 import Menu from "./components/Menu.tsx";
 import PlayerNameDialogue from "./components/PlayerNameDialogue.tsx";
 import GameTab from "./components/Game.tsx";
-import { connectAndHandshake } from "./network/WebSocketClient";
+import { initializeHandshake  } from "./utils/WebSocketConnection.ts";
 
 const App = () => {
-  const [currentTab, setCurrentTab] = useState("");
-  const [username, setUsername] = useState<string | null>(null);
-  const didHandshake = useRef(false);
+
+  const [currentTab, setCurrentTab] = useState("dialog")
+  
+  const websocketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    const storedName = localStorage.getItem("playerName");
+    const websocket = initializeHandshake();
+    websocketRef.current = websocket;
 
-    if (storedName) {
-      setUsername(storedName);
-      setCurrentTab("menu");
+    websocket.onopen = () => console.log("Connected to server");
+    websocket.onclose = () => console.log("Player disconnected");
+    websocket.onerror = (e) => console.log("Error when trying to connect to server: ", e);
 
-      if (!didHandshake.current && !handshakeInitiated) {
-        handshakeInitiated = true;
-        connectAndHandshake(
-          storedName,
-          (socket) => {
-            console.log("Handshake succeeded, socket:", socket);
-            didHandshake.current = true;
-            setCurrentTab("game");
-          },
-          (err) => {
-            console.log("Handshake failed:", err);
-          }
-        );
-      }
-    } else {
-      setCurrentTab("dialog");
+
+    console.log("Local Storage" + localStorage.getItem("player"));
+
+    // Cleanup on unmount
+    return () => {
+      websocket.close(1000, "app unmount");
     }
-  }, []);
+
+  }, [])
+
 
   return (
     <div className="flex h-screen w-full items-center justify-center bg-[url(background.png)]">
-      {currentTab === "menu" && <Menu setCurrentTab={setCurrentTab} />}
-      {currentTab === "dialog" && (
-        <PlayerNameDialogue
-          setCurrentTab={setCurrentTab}
-          onSetUsername={(name: string) => {
-            localStorage.setItem("playerName", name);
-            setUsername(name);
-          }}
-        />
-      )}
-      {currentTab === "game" && <GameTab setCurrentTab={setCurrentTab} />}
+
+      {(currentTab === "menu") && <Menu setCurrentTab={setCurrentTab}/>}
+      {(currentTab === "dialog") && (<PlayerNameDialogue setCurrentTab={setCurrentTab} websocketRef={websocketRef}/>)}
+      {(currentTab === "game") && <GameTab setCurrentTab={setCurrentTab}/>}
+
     </div>
   );
 };

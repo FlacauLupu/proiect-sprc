@@ -1,26 +1,43 @@
-import { useState } from "react"
+import {  useState } from "react"
+import { dispatchLogin } from "../utils/WebSocketCommands"
 
 interface PlayerNameDialogueProps {
-  setCurrentTab: React.Dispatch<React.SetStateAction<string>>
-  onSetUsername: (name: string) => void
+  setCurrentTab: React.Dispatch<React.SetStateAction<string>>;
+  websocketRef: React.RefObject<WebSocket | null>;
 }
 
-const PlayerNameDialogue = ({ setCurrentTab, onSetUsername }: PlayerNameDialogueProps) => {
+const PlayerNameDialogue = ({ setCurrentTab, websocketRef }: PlayerNameDialogueProps) => {
   const [name, setName] = useState<string>("")
-  const [error, setError] = useState<boolean>(false)
+  const [error, setError] = useState<string>("")
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (name.trim() === '') {
-      setError(true);
+      setError("The username can't be blank.");
       return;
     }
 
-    setError(false);
-    onSetUsername(name)
-    setCurrentTab("menu")
-  }
+    if (!websocketRef.current) {
+      setError("No connection to server.")
+      return;
+    }
+
+    setError("");
+    dispatchLogin(
+      websocketRef.current,
+      name,
+      (issuerId, player) => {
+        console.log("Logged in. id:", issuerId, " player: ", player);
+        // setCurrentTab("menu");
+      },
+      () => {
+        setError("Login failed.");
+      }
+    );
+
+    setCurrentTab("menu");
+  };
 
   return (
     <div className="h-screen flex items-center justify-center">
@@ -44,7 +61,7 @@ const PlayerNameDialogue = ({ setCurrentTab, onSetUsername }: PlayerNameDialogue
                       focus:outline-none focus:ring-2 focus:ring-sky-400"
           />
 
-          {error && <p style={{color: 'red'}}> The username can't be blank. </p>}
+          {error && <p style={{color: 'red'}}>{error}</p>}
 
           <button
             type="submit"

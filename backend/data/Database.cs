@@ -44,6 +44,7 @@ namespace Backend
 
                 if (reader.Read())
                 {
+                    Console.WriteLine(reader.GetString(1));
                     return new Player
                     {
                         Id = reader.GetInt64(0),
