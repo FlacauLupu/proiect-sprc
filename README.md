@@ -23,9 +23,9 @@ failures:
 -4 - quit game
 
 ---UPDATES---
-5 - startGame + payload (players: Array<Player>)
-6 - player removed + payload (playerdId: int)
-7 - player jumped + payload (playerdId: int)
+5 - startGame + payload (eventId: Int, players: Array<Player>)
+6 - player removed + payload (eventId: Int, playerdId: int)
+7 - player jumped + payload (eventId: Int playerdId: int,)
 
 payload:
 
