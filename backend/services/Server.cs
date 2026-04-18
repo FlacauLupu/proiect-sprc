@@ -12,6 +12,8 @@ namespace Backend
 {
     public class Server
     {
+        private static readonly List<Socket> _connectedClients = new List<Socket>();
+        private static readonly object _lock = new object();
         private Socket _listener;
 
         public Server(int port)
@@ -30,14 +32,16 @@ namespace Backend
                 if (_listener.Poll(1000, SelectMode.SelectRead))
                 {
                     Socket client = _listener.Accept();
-                    Console.WriteLine("New player connected!");
-
+                    lock (_lock) { _connectedClients.Add(client); }
                     Task.Run(() => HandleClient(client));
+
+                    // Inside HandleClient() in the 'break' block (disconnect)
+                    lock (_lock) { _connectedClients.Remove(client); }
                 }
             }
         }
 
-        private void SendResponse(Socket client, byte[] payload)
+        public static void SendResponse(Socket client, byte[] payload)
         {
             byte[] frame;
 
@@ -91,25 +95,23 @@ namespace Backend
 
                 byte[] decodedPayload = UnmaskData(temp, received);
 
+                byte commandLength = decodedPayload[0];
 
-                for (int i = 0; i < decodedPayload.Length; i++)
+                for (int i = 1; i < commandLength; i++)
                 {
-                    byte b = decodedPayload[i];
-                    if (b == 0) // end of message
-                    {
-                        byte[] messageBuffer = buffer.ToArray();
-
-                        Message message = Commands.DecodeMessage(messageBuffer);
-                        byte[] response = HandleCommands.ExecuteCommand(message);
-                        SendResponse(client, response);
-
-                        buffer.Clear();
-                    }
-                    else
-                    {
-                        buffer.Add(b);
-                    }
+                    buffer.Add(decodedPayload[i]);
                 }
+
+                byte[] messageBuffer = buffer.ToArray();
+
+                Message message = Commands.DecodeMessage(messageBuffer);
+                byte[] response = HandleCommands.ExecuteCommand(message);
+
+                if (Array.Exists([MovingCommands.Up, ManagerCommands.Play, ManagerCommands.Quit], b => b == response[1])) Broadcast(response);
+                else SendResponse(client, response);
+
+                buffer.Clear();
+
             }
         }
         private void HandleHandshake(Socket client, string data)
@@ -168,6 +170,21 @@ namespace Backend
             }
 
             return Array.Empty<byte>();
+        }
+
+        public static void Broadcast(byte[] payload)
+        {
+            lock (_lock)
+            {
+                foreach (var client in _connectedClients)
+                {
+                    if (client.Connected)
+                    {
+                        try { SendResponse(client, payload); }
+                        catch { /* Handle disconnected client */ }
+                    }
+                }
+            }
         }
     }
 }

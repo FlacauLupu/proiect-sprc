@@ -1,38 +1,48 @@
-using System.Collections;
-using System.Diagnostics.Tracing;
+using System.Collections.Generic;
 
 namespace Backend
 {
-
-
-    class HandleGame
+    public static class HandleGame
     {
-        public static ArrayList players = new ArrayList();
-        public static GameState gameState = GameState.None;
-        public static void InitGame()
+        public static List<PlayerState> players = new List<PlayerState>();
+        public static GameState gameState = GameState.Stopped;
+
+        public static void AddPlayer(int playerId)
         {
-            gameState = GameState.Idle;
+            if (gameState != GameState.Running)
+            {
+                players.Add(new PlayerState(playerId));
+                gameState = GameState.Idle;
+            }
+
             if (players.Count == 2)
                 gameState = GameState.Running;
         }
 
-        public static void AddPlayer(int playerId)
+        public static void RemovePlayer(int playerId)
         {
-            if (gameState == GameState.Idle)
-                players.Add(new PlayerState(playerId));
+            if (gameState == GameState.Running || gameState == GameState.Idle)
+            {
+                players.RemoveAll(p => p.playerId == playerId);
+
+                if (players.Count == 0)
+                    gameState = GameState.Stopped;
+                else if (players.Count < 2)
+                    gameState = GameState.Idle;
+            }
         }
 
-        // public static void RemovePlayer(Player player)
+        // public static void Jump(int playerId)
         // {
-        //     players.Remove(player);
+        //     if (gameState == GameState.Running)
+        //     {
+        //         players.RemoveAll(p => p.playerId == playerId);
+
+        //         if (players.Count == 0)
+        //             gameState = GameState.Idle;
+        //     }
         // }
 
-        public static void JumpPlayer(int playerId)
-        {
-            if (gameState == GameState.Running) { }
-
-
-        }
         public enum GameState
         {
             None,
@@ -44,7 +54,7 @@ namespace Backend
         public class PlayerState
         {
             public int playerId;
-            public bool alive;
+            public bool alive = true;
 
             public PlayerState(int playerId)
             {
@@ -54,11 +64,7 @@ namespace Backend
             public void PlayerDie()
             {
                 this.alive = false;
-
             }
-
         }
-
-
     }
 }

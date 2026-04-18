@@ -1,40 +1,35 @@
-commands:
+commands: first byte
 
-1 - login
+1 - login + payload (username: string)
+2 - logout + payload (playerdId: int)
+3 - play game + payload (playerdId: int)
+4 - quit game + payload (playerdId: int)
+5 - jump + payload (playerdId: int)
+6 - die + payload (playerdId: int)
+
+responses: first byte
+success:
+
+1 - login + payload (player: Player)
 2 - logout
-3 - play game
+3 - playGame
 4 - quit game
-5 - jump
 
-issuers:
+failures:
 
-1 - client/server
-2 - 255 - issuer_id/user_id
+-1 - login
+-2 - logout
+-3 - playGame
+-4 - quit game
 
-data:
+---UPDATES---
+5 - startGame + payload (players: Array<Player>)
+6 - player removed + payload (playerdId: int)
+7 - player jumped + payload (playerdId: int)
+
+payload:
 
 any number of bytes sent, including 0, any data type
 
-ending:
-
-0
-
-ex login:
-
-commandform:
-11"alex"0
-responseform:
-ok: 1<Player>0
-error: 0
-
-ex play game:
-
-commandform:
-3{playerId: int}0
-responseform:
-ok: 1{birdsId: Array<byte>}0
-error: 0
-
-ex jump:
-this is in parallel: 5{birdId: byte}0
-with this: 5{birdId: byte}0
+#####################
+{numberOfTotalBytesOfThisRequest: <byte>}{commandId: <byte>}{payload: <byte[]>}

@@ -26,7 +26,7 @@ const GameFrame = forwardRef<GameFrameHandle, {}>((_props, ref) => {
     if (!containerRef.current) return;
 
     class MainScene extends Phaser.Scene {
-      bird!: Phaser.Physics.Arcade.Sprite;
+      bird!: Phaser.Physics.Arcade.Sprite; // need to make it a ArrayList<birdId, Phaser.Physics.Arcade.Sprite>
       pipes!: Phaser.GameObjects.Group;
       score = 0;
       scoreText!: Phaser.GameObjects.Text;
@@ -59,12 +59,13 @@ const GameFrame = forwardRef<GameFrameHandle, {}>((_props, ref) => {
         // @ts-ignore
         sceneRef.current = this;
 
+        // this.birds.forEach((bird)=>{})
         this.bird = this.physics.add.sprite(220, height / 2, "bird");
         this.bird.setCollideWorldBounds(true);
         (this.bird.body as Phaser.Physics.Arcade.Body).setGravityY(800);
         this.bird.setCircle(12);
 
-        this.input.on("pointerdown", this.flap, this);
+        // this.input.on("pointerdown", this.flap, this);
         this.input.keyboard?.on("keydown-SPACE", this.flap, this);
 
         this.pipes = this.add.group();

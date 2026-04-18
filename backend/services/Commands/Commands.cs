@@ -20,57 +20,45 @@ namespace Backend
 
         public const string None = "None";
 
-        public static byte[] CreateMessage(byte command, byte issuer, byte[] data)
+        public static byte[] CreateMessage(byte command, byte[]? data)
         {
-            byte[] message = new byte[data.Length + 3];
+            data ??= Array.Empty<byte>();
 
-            message[0] = command;
-            message[1] = issuer;
+            byte commandLength = (byte)(2 + data.Length);
+            byte[] message = new byte[commandLength];
+
+            message[0] = commandLength;
+            message[1] = command;
 
             Buffer.BlockCopy(data, 0, message, 2, data.Length);
-
-            message[message.Length - 1] = 0;
 
             return message;
         }
 
         public static Message DecodeMessage(byte[] messageBuffer)
         {
-            int size = messageBuffer.Length;
-            if (messageBuffer[size - 1] != 0 || size < 3)
-            {
-                Console.WriteLine("Error");
-
-            }
-
-            byte command = messageBuffer[0];
-            byte issuer = messageBuffer[1];
-            byte[] data = new byte[size - 2];
-
-            Array.Copy(messageBuffer, 2, data, 0, size - 2);
+            byte commandLength = messageBuffer[0];
 
 
+            byte command = messageBuffer[1];
+            byte[] data = new byte[commandLength - 2];
 
-            return new Message(messageBuffer[0], messageBuffer[1], data);
+            Buffer.BlockCopy(messageBuffer, 2, data, 0, data.Length);
+
+            return new Message(command, data);
         }
     }
     public class Message
     {
         public byte command;
-        public byte issuer;
         public byte[] data;
 
-        public Message(byte command, byte issuer, byte[] data)
+        public Message(byte command, byte[] data)
         {
             this.command = command;
-            this.issuer = issuer;
             this.data = data;
         }
     }
 
-    public enum SpecialIssuers : long
-    {
-        ServerClient = 1
-    }
 }
 
