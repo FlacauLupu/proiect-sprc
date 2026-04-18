@@ -1,15 +1,19 @@
-import {  useContext, useState } from "react"
-import { CMD_LOGIN, dispatchLogin, parsePlayerPayload } from "../utils/WebSocketCommands"
-import { SocketContext, ResponsesContext } from "../App.tsx"
-import checkResponse from "../utils/checkResponse.ts"
+import { useContext, useState } from "react";
+import {
+  CMD_LOGIN,
+  dispatchLogin,
+  parsePlayerPayload,
+} from "../utils/WebSocketCommands";
+import { SocketContext, ResponsesContext } from "../App.tsx";
+import checkResponse from "../utils/checkResponse.ts";
 
 interface PlayerNameDialogueProps {
   setCurrentTab: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const PlayerNameDialogue = ({ setCurrentTab }: PlayerNameDialogueProps) => {
-  const [name, setName] = useState<string>("")
-  const [error, setError] = useState<string>("")
+  const [name, setName] = useState<string>("");
+  const [error, setError] = useState<string>("");
 
   const socket = useContext(SocketContext);
   const responses = useContext(ResponsesContext);
@@ -17,40 +21,34 @@ const PlayerNameDialogue = ({ setCurrentTab }: PlayerNameDialogueProps) => {
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (name.trim() === '') {
+    if (name.trim() === "") {
       setError("The username can't be blank.");
       return;
     }
 
-    if (socket)
-    {
+    if (socket) {
       if (!socket) {
-            setError("No connection to server.")
-            return;
-          }
+        setError("No connection to server.");
+        return;
+      }
 
       setError("");
-      dispatchLogin (socket, name,);
-          
+      dispatchLogin(socket, name);
+
       const response = await checkResponse(responses, CMD_LOGIN);
 
       if (response[1] > 0) {
-        const player = parsePlayerPayload(response.slice(2))
-        sessionStorage.setItem("player", JSON.stringify(player))
+        const player = parsePlayerPayload(response.slice(2));
+        sessionStorage.setItem("player", JSON.stringify(player));
         setCurrentTab("menu");
-      }
-      else alert("Error logging the player.")
+      } else alert("Error logging the player.");
     }
   };
 
   return (
     <div className="h-screen flex items-center justify-center">
-      
       <div className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl flex flex-col items-center gap-6">
-        
-        <h2 className="text-xl font-bold text-gray-800">
-          Enter your username
-        </h2>
+        <h2 className="text-xl font-bold text-gray-800">Enter your username</h2>
 
         <form
           className="flex flex-col items-center gap-4 w-full"
@@ -65,7 +63,7 @@ const PlayerNameDialogue = ({ setCurrentTab }: PlayerNameDialogueProps) => {
                       focus:outline-none focus:ring-2 focus:ring-sky-400"
           />
 
-          {error && <p style={{color: 'red'}}>{error}</p>}
+          {error && <p style={{ color: "red" }}>{error}</p>}
 
           <button
             type="submit"
@@ -75,10 +73,9 @@ const PlayerNameDialogue = ({ setCurrentTab }: PlayerNameDialogueProps) => {
             Confirm
           </button>
         </form>
-
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default PlayerNameDialogue;
