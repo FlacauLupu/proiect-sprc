@@ -1,16 +1,20 @@
-import {  useState } from "react"
-import { dispatchLogin } from "../utils/WebSocketCommands"
+import {  useContext, useState } from "react"
+import { CMD_LOGIN, dispatchLogin, parsePlayerPayload } from "../utils/WebSocketCommands"
+import { SocketContext, ResponsesContext } from "../App.tsx"
+import checkResponse from "../utils/checkResponse.ts"
 
 interface PlayerNameDialogueProps {
   setCurrentTab: React.Dispatch<React.SetStateAction<string>>;
-  websocketRef: React.RefObject<WebSocket | null>;
 }
 
-const PlayerNameDialogue = ({ setCurrentTab, websocketRef }: PlayerNameDialogueProps) => {
+const PlayerNameDialogue = ({ setCurrentTab }: PlayerNameDialogueProps) => {
   const [name, setName] = useState<string>("")
   const [error, setError] = useState<string>("")
 
-  const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
+  const socket = useContext(SocketContext);
+  const responses = useContext(ResponsesContext);
+
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (name.trim() === '') {
@@ -18,25 +22,25 @@ const PlayerNameDialogue = ({ setCurrentTab, websocketRef }: PlayerNameDialogueP
       return;
     }
 
-    if (!websocketRef.current) {
-      setError("No connection to server.")
-      return;
-    }
+    if (socket)
+    {
+      if (!socket) {
+            setError("No connection to server.")
+            return;
+          }
 
-    setError("");
-    dispatchLogin(
-      websocketRef.current,
-      name,
-      (issuerId, player) => {
-        console.log("Logged in. id:", issuerId, " player: ", player);
-        // setCurrentTab("menu");
-      },
-      () => {
-        setError("Login failed.");
+      setError("");
+      dispatchLogin (socket, name,);
+          
+      const response = await checkResponse(responses, CMD_LOGIN);
+
+      if (response[1] > 0) {
+        const player = parsePlayerPayload(response.slice(2))
+        sessionStorage.setItem("player", JSON.stringify(player))
+        setCurrentTab("menu");
       }
-    );
-
-    setCurrentTab("menu");
+      else alert("Error logging the player.")
+    }
   };
 
   return (
