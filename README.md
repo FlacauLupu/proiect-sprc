@@ -11,16 +11,16 @@ responses: first byte
 success:
 
 1 - login + payload (player: Player)
-2 - logout
-3 - playGame
-4 - quit game
+2 - logout + payload (eventId: Int)
+3 - playGame + payload (eventId: Int)
+4 - quit game + payload (eventId: Int)
 
 failures:
 
--1 - login
--2 - logout
--3 - playGame
--4 - quit game
+-1 - login failure
+-2 - logout failure
+-3 - playGame failure
+-4 - quit game failure
 
 ---UPDATES---
 5 - startGame + payload (eventId: Int, players: Array<Player>)

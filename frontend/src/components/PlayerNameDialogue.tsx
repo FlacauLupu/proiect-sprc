@@ -1,11 +1,7 @@
 import { useContext, useState } from "react";
-import {
-  CMD_LOGIN,
-  dispatchLogin,
-  parsePlayerPayload,
-} from "../utils/WebSocketCommands";
+import { CMD_LOGIN, dispatchLogin } from "../utils/WebSocketCommands";
 import { SocketContext, ResponsesContext } from "../App.tsx";
-import checkResponse from "../utils/checkResponse.ts";
+import checkResponse from "../utils/checkCommandResponse.ts";
 
 interface PlayerNameDialogueProps {
   setCurrentTab: React.Dispatch<React.SetStateAction<string>>;
@@ -35,11 +31,9 @@ const PlayerNameDialogue = ({ setCurrentTab }: PlayerNameDialogueProps) => {
       setError("");
       dispatchLogin(socket, name);
 
-      const response = await checkResponse(responses, CMD_LOGIN);
+      const response = await checkResponse(CMD_LOGIN, responses);
 
-      if (response[1] > 0) {
-        const player = parsePlayerPayload(response.slice(2));
-        sessionStorage.setItem("player", JSON.stringify(player));
+      if (response > 0) {
         setCurrentTab("menu");
       } else alert("Error logging the player.");
     }

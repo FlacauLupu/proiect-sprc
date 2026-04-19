@@ -6,7 +6,7 @@ import {
   dispatchLogout,
   dispatchPlayGame,
 } from "../utils/WebSocketCommands";
-import checkResponse from "../utils/checkResponse";
+import checkCommandResponse from "../utils/checkCommandResponse";
 
 interface MenuProps {
   setCurrentTab: React.Dispatch<React.SetStateAction<string>>;
@@ -24,9 +24,9 @@ const Menu = ({ setCurrentTab }: MenuProps) => {
       const playerId = playerData.id;
 
       dispatchLogout(socket, playerId);
-      const response = await checkResponse(responses, CMD_LOGOUT);
+      const response = await checkCommandResponse(CMD_LOGOUT, responses);
 
-      if (response[1] > 0) {
+      if (response > 0) {
         setCurrentTab("dialog");
         sessionStorage.removeItem("player");
       } else alert("Error logging out the player.");
@@ -42,9 +42,9 @@ const Menu = ({ setCurrentTab }: MenuProps) => {
 
       dispatchPlayGame(socket, playerId);
 
-      const response = await checkResponse(responses, CMD_PLAY);
+      const response = await checkCommandResponse(CMD_PLAY, responses);
 
-      if (response[1] > 0) {
+      if (response > 0) {
         setCurrentTab("game");
       } else alert("Error starting the game.");
     }

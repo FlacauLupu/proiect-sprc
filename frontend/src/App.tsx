@@ -1,55 +1,47 @@
-import { useState, useEffect, createContext } from "react";
+import { useState, useEffect, createContext, useRef } from "react";
 import Menu from "./components/Menu.tsx";
 import PlayerNameDialogue from "./components/PlayerNameDialogue.tsx";
 import GameTab from "./components/Game.tsx";
 import { initializeHandshake } from "./utils/WebSocketConnection.ts";
+import { checkOutGameEvents } from "./utils/checkEvents.ts";
 
-export const SocketContext = createContext<WebSocket>(initializeHandshake());
-export const ResponsesContext = createContext<Array<Uint8Array>>([]);
-export const UpdatesContext = createContext<Array<Uint8Array>>([]);
+export const SocketContext = createContext<WebSocket | null>(null);
+export const ResponsesContext = createContext<Array<number>>([]);
 
 const App = () => {
   const [currentTab, setCurrentTab] = useState("dialog");
 
-  const [socket, setSocket] = useState<WebSocket>();
-  const [responses, setResponses] = useState<Array<Uint8Array>>([]);
+  const [socket, setSocket] = useState<WebSocket | null>(null);
+
+  const socketBound = useRef(false);
+  const outGameSeenEvents = useRef<Set<number>>(new Set());
+  const [responses, setResponses] = useState<number[]>([]);
 
   useEffect(() => {
-    setSocket(initializeHandshake());
+    const sock = initializeHandshake();
 
-    if (socket) {
-      socket.onopen = () => console.log("Connected to server");
-      socket.onclose = () => console.log("Player disconnected");
-      socket.onerror = (e) =>
-        console.log("Error when trying to connect to server: ", e);
+    if (!socketBound.current) {
+      setSocket(sock);
+      checkOutGameEvents(sock, outGameSeenEvents.current, setResponses);
 
-      socket.addEventListener("message", (e: MessageEvent) => {
-        e.data[1] < 5 && setResponses((prev) => [...prev, e.data]);
-      });
-
-      console.log("Local Storage" + localStorage.getItem("player"));
-
-      // Cleanup on unmount
       return () => {
-        socket.close(1000, "app unmount");
+        sock.close(1000, "app unmount");
       };
     }
   }, []);
 
   return (
-    // <SocketContext.Provider value = {socket}>
-
-    <div className="flex h-screen w-full items-center justify-center bg-[url(background.png)]">
+    <SocketContext.Provider value={socket}>
       <ResponsesContext.Provider value={responses}>
-        {currentTab === "menu" && <Menu setCurrentTab={setCurrentTab} />}
-        {currentTab === "dialog" && (
-          <PlayerNameDialogue setCurrentTab={setCurrentTab} />
-        )}
-        {currentTab === "game" && <GameTab setCurrentTab={setCurrentTab} />}
+        <div className="flex h-screen w-full items-center justify-center bg-[url(background.png)]">
+          {currentTab === "menu" && <Menu setCurrentTab={setCurrentTab} />}
+          {currentTab === "dialog" && (
+            <PlayerNameDialogue setCurrentTab={setCurrentTab} />
+          )}
+          {currentTab === "game" && <GameTab setCurrentTab={setCurrentTab} />}
+        </div>
       </ResponsesContext.Provider>
-    </div>
-
-    // </SocketContext.Provider>
+    </SocketContext.Provider>
   );
 };
 

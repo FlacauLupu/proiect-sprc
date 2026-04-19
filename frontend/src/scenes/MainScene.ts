@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import type { PlayerState } from "../types/Player";
 import Denque from "denque";
-import checkUpdate from "../utils/checkUpdate";
+import { checkInGameEvents } from "../utils/checkEvents";
 import {
   dispatchPlayerDeath,
   dispatchPlayerJump,
@@ -12,32 +12,32 @@ type BirdType = Phaser.Physics.Arcade.Sprite;
 export default class MainScene extends Phaser.Scene {
   currentPlayer!: PlayerState;
   players!: Record<number, PlayerState>;
-  playersCount: number;
+  playersCount!: number;
+
   pipes!: Phaser.GameObjects.Group;
   score = 0;
   scoreText!: Phaser.GameObjects.Text;
   pipeTimer?: Phaser.Time.TimerEvent;
   selectedPipe: Phaser.GameObjects.Rectangle | null = null;
 
-  jumpQueue: Denque;
-  playersOutQueue: Denque;
-  seenEvents: Set<number>;
+  jumpQueue!: Denque;
+  playersOutQueue!: Denque;
+  seenEvents!: Set<number>;
   lastEventIdProcessed = 0;
 
-  socket: WebSocket | null;
+  socket!: WebSocket;
+  socketBound = false;
 
-  constructor(
-    sceneRef: any,
-    currentPlayer: PlayerState,
-    players: Record<number, PlayerState> = {},
-    socket: WebSocket,
-  ) {
+  constructor() {
     super({ key: "MainScene" });
-    sceneRef.current = this;
-    this.currentPlayer = currentPlayer;
-    this.players = players;
-    this.playersCount = Object.keys(players).length;
-    this.socket = socket;
+  }
+
+  init(data: any) {
+    this.currentPlayer = data.currentPlayer;
+    this.players = data.players;
+    this.socket = data.socket;
+
+    this.playersCount = Object.keys(this.players).length;
 
     this.jumpQueue = new Denque();
     this.playersOutQueue = new Denque();
@@ -61,6 +61,17 @@ export default class MainScene extends Phaser.Scene {
   }
 
   create() {
+    if (this.socket && !this.socketBound) {
+      checkInGameEvents(
+        this.socket,
+        this.jumpQueue,
+        this.playersOutQueue,
+        this.seenEvents,
+      );
+
+      this.socketBound = true;
+    }
+
     const { width, height } = this.scale;
     this.physics.world.setBounds(0, 0, width, height);
 
@@ -105,15 +116,6 @@ export default class MainScene extends Phaser.Scene {
     });
   }
   update() {
-    if (this.socket) {
-      checkUpdate(
-        this.socket,
-        this.jumpQueue,
-        this.playersOutQueue,
-        this.seenEvents,
-      );
-    }
-
     while (this.jumpQueue.size) {
       const playerThatJumped = this.jumpQueue.shift();
       this.flap(playerThatJumped);
