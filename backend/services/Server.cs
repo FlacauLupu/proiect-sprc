@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Backend;
+using Microsoft.VisualBasic;
 
 
 namespace Backend
@@ -16,6 +17,7 @@ namespace Backend
         private static readonly object _lock = new object();
         private Socket _listener;
 
+
         public Server(int port)
         {
             _listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -23,6 +25,7 @@ namespace Backend
             _listener.Bind(new IPEndPoint(IPAddress.Any, port));
             _listener.Listen(10);
             Console.WriteLine($"Server started on port {port}...");
+
         }
 
         public void Run()
@@ -93,27 +96,26 @@ namespace Backend
 
                 }
 
-                byte[] decodedPayload = UnmaskData(temp, received);
-
-                byte commandLength = decodedPayload[0];
-
-                for (int i = 1; i < commandLength; i++)
+                try
                 {
-                    buffer.Add(decodedPayload[i]);
+                    byte[] decodedPayload = UnmaskData(temp, received);
+                    if (!ValidatePayload(decodedPayload)) continue;
+                    Message message = Commands.DecodeMessageBuffer(decodedPayload);
+                    CommandHandler.ProcessMessage(message);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("ERROR: " + ex.StackTrace);
                 }
 
-                byte[] messageBuffer = buffer.ToArray();
-
-                Message message = Commands.DecodeMessage(messageBuffer);
-                byte[] response = HandleCommands.ExecuteCommand(message);
-
-                if (Array.Exists([MovingCommands.Up, ManagerCommands.Play, ManagerCommands.Quit], b => b == response[1])) Broadcast(response);
-                else SendResponse(client, response);
-
-                buffer.Clear();
-
             }
+
+
+
+            buffer.Clear();
+
         }
+
         private void HandleHandshake(Socket client, string data)
         {
             var match = Regex.Match(data, "Sec-WebSocket-Key: (.*)");
@@ -132,6 +134,8 @@ namespace Backend
 
 
             client.Send(Encoding.UTF8.GetBytes(response));
+
+            CommandHandler.socket = client;
             Console.WriteLine("Handshake sent! Postman should now be 'Connected'.");
         }
 
@@ -185,6 +189,18 @@ namespace Backend
                     }
                 }
             }
+        }
+
+        private bool ValidatePayload(byte[] buffer)
+        {
+            if (buffer.Length != buffer[0])
+            {
+                byte[] responseBuffer = Commands.CreateResponseBuffer(new Response(Commands.MalformedCommand, [0], null));
+                CommandHandler.ExecuteCommand(CommandType.Unicast, responseBuffer);
+                return false;
+            }
+
+            return true;
         }
     }
 }

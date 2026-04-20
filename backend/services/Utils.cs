@@ -42,7 +42,7 @@ namespace Backend
             }
         }
 
-        public static byte[] SerializePlayerState(HandleGame.PlayerState playerState)
+        public static byte[] SerializePlayerState(GameHandler.PlayerState playerState)
         {
             using (MemoryStream ms = new MemoryStream())
             {

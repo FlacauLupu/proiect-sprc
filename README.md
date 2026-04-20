@@ -10,7 +10,7 @@ commands: first byte
 responses: first byte
 success:
 
-1 - login + payload (player: Player)
+1 - login + payload (eventId: Int, player: Player)
 2 - logout + payload (eventId: Int)
 3 - playGame + payload (eventId: Int)
 4 - quit game + payload (eventId: Int)

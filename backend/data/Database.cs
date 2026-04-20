@@ -47,7 +47,7 @@ namespace Backend
                     Console.WriteLine(reader.GetString(1));
                     return new Player
                     {
-                        Id = reader.GetInt64(0),
+                        Id = reader.GetInt16(0),
                         Username = reader.GetString(1),
                         Coins = reader.GetInt32(2),
                         Skill = reader.GetInt32(3)
@@ -80,7 +80,7 @@ namespace Backend
             {
                 object? result = command.ExecuteScalar();
                 if (result == null) return null;
-                long newId = Convert.ToInt64(result);
+                short newId = Convert.ToInt16(result);
 
                 return new Player(newId, playerName, 0, 1);
             }

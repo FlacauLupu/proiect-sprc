@@ -1,8 +1,7 @@
-using System.Collections.Generic;
 
 namespace Backend
 {
-    public static class HandleGame
+    public static class GameHandler
     {
         public static List<PlayerState> players = new List<PlayerState>();
         public static GameState gameState = GameState.Stopped;
@@ -17,6 +16,7 @@ namespace Backend
 
             if (players.Count == 2)
                 gameState = GameState.Running;
+
         }
 
         public static void RemovePlayer(int playerId)
@@ -32,39 +32,36 @@ namespace Backend
             }
         }
 
-        // public static void Jump(int playerId)
-        // {
-        //     if (gameState == GameState.Running)
-        //     {
-        //         players.RemoveAll(p => p.playerId == playerId);
 
-        //         if (players.Count == 0)
-        //             gameState = GameState.Idle;
-        //     }
-        // }
-
-        public enum GameState
+        public static bool DoesPlayerExist(int playerId)
         {
-            None,
-            Stopped,
-            Idle,
-            Running,
+            return players.Any(p => p.playerId == playerId && p.alive);
+        }
+
+        public static void PlayerDie(int playerId)
+        {
+            players.Any(p => p.playerId == playerId);
         }
 
         public class PlayerState
         {
             public int playerId;
-            public bool alive = true;
+            public bool alive;
 
             public PlayerState(int playerId)
             {
                 this.playerId = playerId;
+                this.alive = true;
             }
 
-            public void PlayerDie()
-            {
-                this.alive = false;
-            }
         }
+
+    }
+    public enum GameState
+    {
+        None,
+        Stopped,
+        Idle,
+        Running,
     }
 }

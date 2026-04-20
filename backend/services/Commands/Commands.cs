@@ -8,56 +8,82 @@ namespace Backend
     public class Commands
     {
 
-        public const string CommandDelim = "|";
-        public const string IssuerDelim = ":";
-        public const string EndMessageDelim = "<##>";
 
-        public const string MalformedCommand = "MC";
-        public const string InvalidRequest = "IR";
+        public const byte MalformedCommand = 9;
+        public const byte InvalidRequest = 9;
 
-        public const byte Success = 1;
-        public const byte Error = 0;
 
         public const string None = "None";
 
-        public static byte[] CreateMessage(byte command, byte[]? data)
+        public static byte[] CreateResponseBuffer(Response response)
         {
-            data ??= Array.Empty<byte>();
 
-            byte commandLength = (byte)(2 + data.Length);
-            byte[] message = new byte[commandLength];
+            byte[] messageBuffer = new byte[response.responseLength];
 
-            message[0] = commandLength;
-            message[1] = command;
+            int offset = 0;
 
-            Buffer.BlockCopy(data, 0, message, 2, data.Length);
+            Buffer.BlockCopy(BitConverter.GetBytes(response.responseLength), 0, messageBuffer, offset, sizeof(short));
+            offset += sizeof(short);
 
-            return message;
+            Buffer.BlockCopy(response.eventId, 0, messageBuffer, offset, response.eventId.Length);
+            offset += response.eventId.Length;
+
+            if (response.data is not null)
+                Buffer.BlockCopy(response.data, 0, messageBuffer, offset, response.data.Length);
+
+            return messageBuffer;
         }
 
-        public static Message DecodeMessage(byte[] messageBuffer)
+        public static Message DecodeMessageBuffer(byte[] messageBuffer)
         {
-            byte commandLength = messageBuffer[0];
+            int offset = 0;
 
+            byte[] messageLength = messageBuffer[offset..sizeof(short)];
+            offset += sizeof(short);
 
-            byte command = messageBuffer[1];
-            byte[] data = new byte[commandLength - 2];
+            byte command = messageBuffer[offset];
+            offset += sizeof(byte);
 
-            Buffer.BlockCopy(messageBuffer, 2, data, 0, data.Length);
+            byte[] data = messageBuffer[offset..];
 
-            return new Message(command, data);
+            return new Message(command, data, BitConverter.ToInt16(messageLength, 0));
         }
     }
+    public class Response
+    {
+        public byte command;
+        public byte[] eventId;
+        public byte[]? data;
+        public short responseLength;
+
+
+        public Response(byte command, byte[] eventId, byte[]? data)
+        {
+            this.command = command;
+            this.eventId = eventId;
+            this.data = data;
+
+            int dataLength = data?.Length ?? 0;
+
+            this.responseLength = (short)(sizeof(short) + sizeof(byte) + dataLength);
+
+        }
+    }
+
     public class Message
     {
         public byte command;
-        public byte[] data;
+        public byte[]? data;
+        public short messageLength;
 
-        public Message(byte command, byte[] data)
+
+        public Message(byte command, byte[]? data, short messageLength)
         {
             this.command = command;
             this.data = data;
+            this.messageLength = messageLength;
         }
+
     }
 
 }
