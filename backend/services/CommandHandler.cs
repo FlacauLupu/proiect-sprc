@@ -1,5 +1,6 @@
 using System.Net.Sockets;
 using System.Text;
+using System.Buffers.Binary;
 
 using Backend;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -15,15 +16,12 @@ namespace Backend
 
         public static void ProcessMessage(Message message)
         {
-            if (socket is null) { return; }
+            if (socket is null)
+            {
+                Console.WriteLine("Socket is null!");
+                return;
+            }
 
-
-
-            short playerId;
-            byte[] eventIdBuffer = new byte[2];
-            eventIdBuffer[0] = (byte)((eventId >> 8) & 0xFF);
-            eventIdBuffer[1] = (byte)(eventId & 0xFF);
-            eventId++;
             byte[] responseBuffer;
             commandType = CommandType.Unicast;
 
@@ -31,6 +29,9 @@ namespace Backend
 
             try
             {
+                eventId++;
+
+                Player? player;
                 switch (message.command)
                 {
 
@@ -40,68 +41,66 @@ namespace Backend
                         if (message.data is not null)
                             playerName = Encoding.UTF8.GetString(message.data) ?? "";
 
-                        Player? player;
                         player = Database.GetPlayerByName(playerName);
 
                         if (player is null)
                         {
-                            response = new Response(AuthCommands.Login, eventIdBuffer, null);
+                            response = new Response(AuthCommands.Login, EventId.GetEventIdBuffer(), null);
                             responseBuffer = Commands.CreateResponseBuffer(response);
                             break;
                         }
 
                         byte[] playerBuffer = Utils.SerializePlayer(player);
-                        responseBuffer = Commands.CreateResponseBuffer(new Response(AuthCommands.Login, eventIdBuffer, playerBuffer));
+                        response = new Response(AuthCommands.Login, EventId.GetEventIdBuffer(), playerBuffer);
+                        responseBuffer = Commands.CreateResponseBuffer(response);
                         break;
 
                     case AuthCommands.Logout:
 
                         if (message.data is null)
                         {
-                            response = new Response(Commands.InvalidRequest, eventIdBuffer, null);
+                            response = new Response(Commands.InvalidRequest, EventId.GetEventIdBuffer(), null);
 
                             responseBuffer = Commands.CreateResponseBuffer(response);
                             commandType = CommandType.Broadcast;
                             break;
                         }
 
-                        playerId = (short)((message.data[0] << 8) | message.data[1]);
+                        short playerId = (short)((message.data[0] << 8) | message.data[1]);
 
                         GameHandler.RemovePlayer(playerId);
 
-                        response = new Response(ManagerCommands.Play, eventIdBuffer, null);
+                        response = new Response(ManagerCommands.Play, EventId.GetEventIdBuffer(), null);
                         responseBuffer = Commands.CreateResponseBuffer(response);
                         break;
 
                     case ManagerCommands.Play:
                         if (message.data is null)
                         {
-                            response = new Response(Commands.InvalidRequest, eventIdBuffer, null);
+                            response = new Response(Commands.InvalidRequest, EventId.GetEventIdBuffer(), null);
                             responseBuffer = Commands.CreateResponseBuffer(response);
                             break;
                         }
 
                         playerId = (short)((message.data[0] << 8) | message.data[1]);
-                        Console.WriteLine("Player id on server commandhandler: " + playerId);
-                        GameHandler.AddPlayer(playerId);
-                        byte[] status = [1];
 
-                        if (GameHandler.DoesPlayerExist(playerId))
-                        {
-                            status = [0];
-                            if (GameHandler.gameState == GameState.Running)
-                                commandType = CommandType.Broadcast;
-                        }
+                        player = Database.GetPlayerById(playerId);
 
-                        response = new Response(ManagerCommands.Play, eventIdBuffer, status);
+                        // check if player exist in the database and if it is already in the game
+                        if (player is not null && !GameHandler.playersDict.ContainsKey(player.Id))
+                            GameHandler.AddPlayer(player);
+                        else response = new Response(ManagerCommands.Play, EventId.GetEventIdBuffer(), null);
+
+
+                        response = new Response(ManagerCommands.Play, EventId.GetEventIdBuffer(), null);
                         responseBuffer = Commands.CreateResponseBuffer(response);
                         break;
 
                     case ManagerCommands.Quit:
                         if (message.data is null)
                         {
-                            response = new Response(Commands.InvalidRequest, eventIdBuffer, null);
-                            responseBuffer = Commands.CreateResponseBuffer(new Response(Commands.InvalidRequest, eventIdBuffer, null));
+                            response = new Response(Commands.InvalidRequest, EventId.GetEventIdBuffer(), null);
+                            responseBuffer = Commands.CreateResponseBuffer(response);
                             commandType = CommandType.Broadcast;
                             break;
                         }
@@ -112,14 +111,14 @@ namespace Backend
 
                         commandType = CommandType.Broadcast;
 
-                        response = new Response(ManagerCommands.Quit, eventIdBuffer, null);
+                        response = new Response(ManagerCommands.Quit, EventId.GetEventIdBuffer(), null);
                         responseBuffer = Commands.CreateResponseBuffer(response);
                         break;
 
                     case MovingCommands.Up:
                         if (message.data is null)
                         {
-                            response = new Response(Commands.InvalidRequest, eventIdBuffer, null);
+                            response = new Response(Commands.InvalidRequest, EventId.GetEventIdBuffer(), null);
                             responseBuffer = Commands.CreateResponseBuffer(response);
                             break;
                         }
@@ -127,22 +126,22 @@ namespace Backend
                         playerId = (short)((message.data[0] << 8) | message.data[1]);
 
 
-                        if (!GameHandler.DoesPlayerExist(playerId))
+                        if (!GameHandler.playersDict.ContainsKey(playerId))
                         {
-                            response = new Response(Commands.InvalidRequest, eventIdBuffer, null);
+                            response = new Response(Commands.InvalidRequest, EventId.GetEventIdBuffer(), null);
                             responseBuffer = Commands.CreateResponseBuffer(response);
                             break;
                         }
 
                         commandType = CommandType.Broadcast;
 
-                        response = new Response(MovingCommands.Up, eventIdBuffer, message.data);
+                        response = new Response(MovingCommands.Up, EventId.GetEventIdBuffer(), message.data);
                         responseBuffer = Commands.CreateResponseBuffer(response);
 
                         break;
 
                     default:
-                        response = new Response(Commands.InvalidRequest, eventIdBuffer, null);
+                        response = new Response(Commands.InvalidRequest, EventId.GetEventIdBuffer(), null);
                         responseBuffer = Commands.CreateResponseBuffer(response);
                         break;
 
@@ -171,19 +170,6 @@ namespace Backend
 
         }
 
-        private static byte[] CreatePlayersBuffer()
-        {
-            byte[] playersBuffer = new byte[GameHandler.players.Count];
-            int playerStateSize = 5; // 4 bytes for id, and one for alive boolean
-
-            for (int i = 0; i < GameHandler.players.Count; i++)
-            {
-                byte[] serialized = Utils.SerializePlayerState(GameHandler.players[i]);
-                Buffer.BlockCopy(serialized, 0, playersBuffer, i * playerStateSize, playerStateSize);
-            }
-
-            return playersBuffer;
-        }
 
 
     }
@@ -192,5 +178,22 @@ namespace Backend
     {
         Unicast,
         Broadcast,
+    }
+
+    public static class EventId
+    {
+        private static byte[] buffer = { 0x00, 0x01 };
+        private static short eventId;
+
+        public static byte[] GetEventIdBuffer()
+        {
+            eventId = BinaryPrimitives.ReadInt16BigEndian(buffer);
+            BinaryPrimitives.WriteInt16BigEndian(buffer, (short)(eventId + 1));
+            eventId++;
+
+            return buffer;
+        }
+
+
     }
 }

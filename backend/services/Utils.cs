@@ -66,45 +66,32 @@ namespace Backend
             {
                 WriteInt16BE(writer, player.Id);
                 WriteStringBE(writer, player.Username);
-                writer.Write(player.Coins); // 1 byte → endian doesn’t matter
-                writer.Write(player.Skill); // 1 byte → endian doesn’t matter
+                writer.Write(player.Coins);
+                writer.Write(player.Skill);
 
                 return ms.ToArray();
             }
         }
 
-        public static byte[] SerializePlayerList(List<GameHandler.PlayerState> players)
+        public static byte[] SerializePlayerStates(List<GameHandler.PlayerState> playerStates)
         {
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
             {
-                WriteInt32BE(writer, players.Count);
+                WriteInt32BE(writer, playerStates.Count);
 
-                foreach (var p in players)
+                foreach (var p in playerStates)
                 {
-                    // WriteInt16BE(writer, p.id);
-                    // WriteStringBE(writer, p.Username);
-                    // writer.Write(p.Coins);
-                    // writer.Write(p.Skill);
+                    WriteInt16BE(writer, p.player.Id);
+                    WriteStringBE(writer, p.player.Username);
+                    writer.Write(p.player.Coins);
+                    writer.Write(p.player.Skill);
                 }
 
                 return ms.ToArray();
             }
         }
 
-        public static byte[] SerializePlayerState(GameHandler.PlayerState playerState)
-        {
-            using (MemoryStream ms = new MemoryStream())
-            {
-                using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
-                {
-                    writer.Write(playerState.playerId); // Writes 4 bytes
-                    writer.Write(playerState.alive);  // Writes 1 byte
-
-                    return ms.ToArray();
-                }
-            }
-        }
 
         public static void WriteInt32BE(BinaryWriter writer, int value)
         {

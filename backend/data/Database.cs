@@ -29,6 +29,41 @@ namespace Backend
             command.ExecuteNonQuery();
         }
 
+        public static Player? GetPlayerById(int playerId)
+        {
+            using var connection = new SqliteConnection(ConnectionString);
+            connection.Open();
+
+            var command = connection.CreateCommand();
+            command.CommandText = "SELECT Id, Name, Coins, Skill FROM Players WHERE Id = $id";
+            command.Parameters.AddWithValue("$id", playerId);
+
+            try
+            {
+                using var reader = command.ExecuteReader();
+
+                if (reader.Read())
+                {
+                    return new Player
+                    {
+                        Id = reader.GetInt16(0),
+                        Username = reader.GetString(1),
+                        Coins = reader.GetInt32(2),
+                        Skill = reader.GetInt32(3)
+                    };
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("GetPlayerById Error: " + ex.Message);
+                return null;
+            }
+        }
+
         public static Player? GetPlayerByName(string playerName)
         {
             using var connection = new SqliteConnection(ConnectionString);

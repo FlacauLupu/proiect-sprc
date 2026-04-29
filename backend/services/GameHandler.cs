@@ -3,68 +3,65 @@ namespace Backend
 {
     public static class GameHandler
     {
-        public static List<PlayerState> players = new List<PlayerState>();
+        public static Dictionary<short, PlayerState> playersDict = new();
         public static GameState gameState = GameState.Stopped;
 
-        public static void AddPlayer(int playerId)
+
+        public static void AddPlayer(Player player)
         {
             if (gameState != GameState.Running)
             {
-                // players.Add(new PlayerState(playerId));
-                Console.WriteLine(playerId);
+                playersDict[player.Id] = new PlayerState(player);
 
                 gameState = GameState.Idle;
             }
 
-            if (players.Count == 1)
+            if (playersDict.Count == 2)
             {
                 byte[] eventIdBuffer = new byte[2];
                 eventIdBuffer[0] = (byte)((CommandHandler.eventId >> 8) & 0xFF);
                 eventIdBuffer[1] = (byte)(CommandHandler.eventId & 0xFF);
 
-                // byte[]? playerStatesBuffer = Utils.SerializePlayerList();
+                byte[] playerStatesBuffer = Utils.SerializePlayerStates(playersDict.Values.ToList());
 
-                // Response response = new Response(ManagerCommands.Start, eventIdBuffer, );
-                // CommandHandler.ExecuteCommand(CommandType.Broadcast, )
+                Response response = new Response(ManagerCommands.Start, eventIdBuffer, playerStatesBuffer);
+                byte[] resposeBuffer = Commands.CreateResponseBuffer(response);
+
+                CommandHandler.ExecuteCommand(CommandType.Broadcast, resposeBuffer);
                 gameState = GameState.Running;
             }
 
         }
 
-        public static void RemovePlayer(int playerId)
+        public static void RemovePlayer(short playerId)
         {
             if (gameState == GameState.Running || gameState == GameState.Idle)
             {
-                players.RemoveAll(p => p.playerId == playerId);
 
-                if (players.Count == 0)
+                playersDict.Remove(playerId);
+
+
+                if (playersDict.Count == 0)
                     gameState = GameState.Stopped;
-                else if (players.Count < 2)
+                else if (playersDict.Count < 2)
                     gameState = GameState.Idle;
             }
         }
 
 
-        public static bool DoesPlayerExist(int playerId)
+        public static void PlayerDie(short playerId)
         {
-            return players.Any(p => p.playerId == playerId && p.alive);
-        }
-
-        public static void PlayerDie(int playerId)
-        {
-            players.Any(p => p.playerId == playerId);
+            playersDict[playerId].alive = false;
         }
 
         public class PlayerState
         {
-            public int playerId;
+            public Player player;
             public bool alive;
-            public string username;
 
-            public PlayerState(int playerId, string username)
+            public PlayerState(Player player)
             {
-                this.playerId = playerId;
-                this.username = username;
+                this.player = player;
                 this.alive = true;
             }
 
