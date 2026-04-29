@@ -17,13 +17,16 @@ namespace Backend
 
         public static byte[] CreateResponseBuffer(Response response)
         {
-
             byte[] messageBuffer = new byte[response.responseLength];
 
             int offset = 0;
 
-            Buffer.BlockCopy(BitConverter.GetBytes(response.responseLength), 0, messageBuffer, offset, sizeof(short));
+            messageBuffer[offset] = (byte)((response.responseLength >> 8) & 0xFF);
+            messageBuffer[offset + 1] = (byte)(response.responseLength & 0xFF);
             offset += sizeof(short);
+
+            messageBuffer[offset] = response.command;
+            offset += sizeof(byte);
 
             Buffer.BlockCopy(response.eventId, 0, messageBuffer, offset, response.eventId.Length);
             offset += response.eventId.Length;
@@ -38,7 +41,7 @@ namespace Backend
         {
             int offset = 0;
 
-            byte[] messageLength = messageBuffer[offset..sizeof(short)];
+            short messageLength = (short)((messageBuffer[0] << 8) | messageBuffer[1]);
             offset += sizeof(short);
 
             byte command = messageBuffer[offset];
@@ -46,7 +49,7 @@ namespace Backend
 
             byte[] data = messageBuffer[offset..];
 
-            return new Message(command, data, BitConverter.ToInt16(messageLength, 0));
+            return new Message(command, data, messageLength);
         }
     }
     public class Response
@@ -65,7 +68,7 @@ namespace Backend
 
             int dataLength = data?.Length ?? 0;
 
-            this.responseLength = (short)(sizeof(short) + sizeof(byte) + dataLength);
+            this.responseLength = (short)(sizeof(short) + sizeof(byte) + sizeof(short) + dataLength);
 
         }
     }

@@ -14,7 +14,7 @@ interface MenuProps {
 
 const Menu = ({ setCurrentTab }: MenuProps) => {
   const socket = useContext(SocketContext);
-  const responses = useContext(ResponsesContext);
+  const { responsesRef } = useContext(ResponsesContext);
 
   const handleChangeName = async () => {
     const playerRaw = sessionStorage.getItem("player"); // Could be string | null
@@ -24,9 +24,8 @@ const Menu = ({ setCurrentTab }: MenuProps) => {
       const playerId = playerData.id;
 
       dispatchLogout(socket, playerId);
-      const response = await checkCommandResponse(CMD_LOGOUT, responses);
-
-      if (response > 0) {
+      const response = await checkCommandResponse(CMD_LOGOUT, responsesRef);
+      if (response) {
         setCurrentTab("dialog");
         sessionStorage.removeItem("player");
       } else alert("Error logging out the player.");
@@ -34,19 +33,22 @@ const Menu = ({ setCurrentTab }: MenuProps) => {
   };
 
   const handlePlayGame = async () => {
-    const playerRaw = sessionStorage.getItem("player"); // Could be string | null
+    const playerRaw = sessionStorage.getItem("player");
 
     if (playerRaw !== null && socket !== null) {
       const playerData = JSON.parse(playerRaw);
       const playerId = playerData.id;
-
       dispatchPlayGame(socket, playerId);
 
-      const response = await checkCommandResponse(CMD_PLAY, responses);
+      try {
+        const response = await checkCommandResponse(CMD_PLAY, responsesRef);
 
-      if (response > 0) {
-        setCurrentTab("game");
-      } else alert("Error starting the game.");
+        if (response) {
+          setCurrentTab("game");
+        } else alert("Error starting the game.");
+      } catch (err: any) {
+        console.error(err.message);
+      }
     }
   };
 

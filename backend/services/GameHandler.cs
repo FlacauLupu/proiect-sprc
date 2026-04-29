@@ -10,12 +10,24 @@ namespace Backend
         {
             if (gameState != GameState.Running)
             {
-                players.Add(new PlayerState(playerId));
+                // players.Add(new PlayerState(playerId));
+                Console.WriteLine(playerId);
+
                 gameState = GameState.Idle;
             }
 
-            if (players.Count == 2)
+            if (players.Count == 1)
+            {
+                byte[] eventIdBuffer = new byte[2];
+                eventIdBuffer[0] = (byte)((CommandHandler.eventId >> 8) & 0xFF);
+                eventIdBuffer[1] = (byte)(CommandHandler.eventId & 0xFF);
+
+                // byte[]? playerStatesBuffer = Utils.SerializePlayerList();
+
+                // Response response = new Response(ManagerCommands.Start, eventIdBuffer, );
+                // CommandHandler.ExecuteCommand(CommandType.Broadcast, )
                 gameState = GameState.Running;
+            }
 
         }
 
@@ -47,10 +59,12 @@ namespace Backend
         {
             public int playerId;
             public bool alive;
+            public string username;
 
-            public PlayerState(int playerId)
+            public PlayerState(int playerId, string username)
             {
                 this.playerId = playerId;
+                this.username = username;
                 this.alive = true;
             }
 

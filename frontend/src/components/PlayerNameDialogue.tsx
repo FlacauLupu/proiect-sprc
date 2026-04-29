@@ -12,7 +12,7 @@ const PlayerNameDialogue = ({ setCurrentTab }: PlayerNameDialogueProps) => {
   const [error, setError] = useState<string>("");
 
   const socket = useContext(SocketContext);
-  const responses = useContext(ResponsesContext);
+  const { responsesRef } = useContext(ResponsesContext);
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -22,20 +22,29 @@ const PlayerNameDialogue = ({ setCurrentTab }: PlayerNameDialogueProps) => {
       return;
     }
 
-    if (socket) {
-      if (!socket) {
-        setError("No connection to server.");
-        return;
-      }
+    if (!socket) {
+      setError("No connection to server.");
+      return;
+    }
 
-      setError("");
-      dispatchLogin(socket, name);
+    if (socket.readyState !== WebSocket.OPEN) {
+      setError("Connection is not ready yet. Please try again.");
+      return;
+    }
 
-      const response = await checkResponse(CMD_LOGIN, responses);
+    setError("");
+    dispatchLogin(socket, name);
 
-      if (response > 0) {
+    try {
+      const response = await checkResponse(CMD_LOGIN, responsesRef);
+
+      if (response) {
         setCurrentTab("menu");
-      } else alert("Error logging the player.");
+      } else {
+        setError("Error logging the player.");
+      }
+    } catch (err: any) {
+      setError(err.message ?? "Login failed.");
     }
   };
 

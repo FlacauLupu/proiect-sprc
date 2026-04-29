@@ -100,6 +100,7 @@ namespace Backend
                 {
                     byte[] decodedPayload = UnmaskData(temp, received);
                     if (!ValidatePayload(decodedPayload)) continue;
+
                     Message message = Commands.DecodeMessageBuffer(decodedPayload);
                     CommandHandler.ProcessMessage(message);
                 }
@@ -193,9 +194,11 @@ namespace Backend
 
         private bool ValidatePayload(byte[] buffer)
         {
-            if (buffer.Length != buffer[0])
+            short length = (short)((buffer[0] << 8) | buffer[1]);
+
+            if (buffer.Length != length)
             {
-                byte[] responseBuffer = Commands.CreateResponseBuffer(new Response(Commands.MalformedCommand, [0], null));
+                byte[] responseBuffer = Commands.CreateResponseBuffer(new Response(Commands.MalformedCommand, BitConverter.GetBytes((short)0), null));
                 CommandHandler.ExecuteCommand(CommandType.Unicast, responseBuffer);
                 return false;
             }

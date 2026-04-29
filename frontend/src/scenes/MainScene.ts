@@ -37,7 +37,7 @@ export default class MainScene extends Phaser.Scene {
     this.players = data.players;
     this.socket = data.socket;
 
-    this.playersCount = Object.keys(this.players).length;
+    this.playersCount = this.players ? Object.keys(this.players).length : 1;
 
     this.jumpQueue = new Denque();
     this.playersOutQueue = new Denque();

@@ -1,5 +1,6 @@
 import type { Update } from "../types/Update.ts";
 import type { Player } from "../types/Player.ts";
+import type { ResponseType } from "../types/ResponseType.ts";
 
 // Commands
 export const CMD_LOGIN = 1;
@@ -10,50 +11,85 @@ export const CMD_JUMP = 5;
 export const CMD_DEATH = 6;
 
 // Updates
+export const UPD_LOGIN = 1;
 export const UPD_START = 5;
 export const UPD_PLAYER_REMOVED = 6;
 export const UPD_PLAYER_JUMPED = 7;
+
+const SIZEOF_BYTES_COUNTER = 2;
+const SIZEOF_COMMAND = 1;
+const SIZEOF_EVENTID = 2;
 
 export const dispatchCommand = (
   socket: WebSocket,
   command: number,
   payload: any,
 ) => {
-  const encoder = new TextEncoder();
-  const payloadBytes = encoder.encode(payload);
+  const SIZEOF_DATA = payload.byteLength;
 
-  const totalBytes = 3 + payloadBytes.length;
-  const message = new Uint8Array(totalBytes);
+  const totalBytesCounter = SIZEOF_BYTES_COUNTER + SIZEOF_COMMAND + SIZEOF_DATA;
+  const message = new ArrayBuffer(totalBytesCounter);
 
-  message[0] = totalBytes;
-  message[1] = command;
-  message.set(payloadBytes, 2);
+  const view = new DataView(message);
 
-  socket.send(message.buffer);
+  let offset = 0;
+
+  view.setUint16(offset, totalBytesCounter, false);
+  offset += SIZEOF_BYTES_COUNTER;
+  view.setUint8(offset, command);
+
+  offset += SIZEOF_COMMAND;
+
+  new Uint8Array(message).set(payload, offset);
+
+  socket.send(message);
 };
 
 export const dispatchLogin = (socket: WebSocket, username: string) => {
-  dispatchCommand(socket, CMD_LOGIN, username);
+  const encodedUsername = new TextEncoder().encode(username);
+  dispatchCommand(socket, CMD_LOGIN, encodedUsername);
 };
 
 export const dispatchLogout = (socket: WebSocket, playerId: number) => {
-  dispatchCommand(socket, CMD_LOGOUT, playerId);
+  const buffer = new ArrayBuffer(2);
+  const view = new DataView(buffer);
+
+  view.setUint16(0, playerId, false);
+  dispatchCommand(socket, CMD_LOGOUT, buffer);
 };
 
 export const dispatchPlayGame = (socket: WebSocket, playerId: number) => {
-  dispatchCommand(socket, CMD_PLAY, playerId);
+  const buffer = new ArrayBuffer(2);
+  const view = new DataView(buffer);
+  console.log(`Player Id is: ${playerId}`);
+
+  view.setUint16(0, playerId, false);
+  console.log(`View is:  ${new Uint8Array(buffer)}`);
+  dispatchCommand(socket, CMD_PLAY, buffer);
 };
 
 export const dispatchQuitGame = (socket: WebSocket, playerId: number) => {
-  dispatchCommand(socket, CMD_QUIT, playerId);
+  const buffer = new ArrayBuffer(2);
+  const view = new DataView(buffer);
+
+  view.setUint16(0, playerId, false);
+  dispatchCommand(socket, CMD_QUIT, buffer);
 };
 
 export const dispatchPlayerJump = (socket: WebSocket, playerId: number) => {
-  dispatchCommand(socket, CMD_JUMP, playerId);
+  const buffer = new ArrayBuffer(2);
+  const view = new DataView(buffer);
+
+  view.setUint16(0, playerId, false);
+  dispatchCommand(socket, CMD_JUMP, buffer);
 };
 
 export const dispatchPlayerDeath = (socket: WebSocket, playerId: number) => {
-  dispatchCommand(socket, CMD_DEATH, playerId);
+  const buffer = new ArrayBuffer(2);
+  const view = new DataView(buffer);
+
+  view.setUint16(0, playerId, false);
+  dispatchCommand(socket, CMD_DEATH, buffer);
 };
 
 export function parsePlayerPayload(payloadBytes: Uint8Array<ArrayBuffer>) {
@@ -65,19 +101,12 @@ export function parsePlayerPayload(payloadBytes: Uint8Array<ArrayBuffer>) {
 
   let offset = 0;
 
-  const id = view.getInt32(offset, true);
-  offset += 4;
+  const id = view.getInt16(offset, false);
+  offset += 2;
   console.log("id:", id, "| offset now:", offset);
 
-  let usernameLength = 0;
-  let shift = 0;
-  let byte;
-  do {
-    byte = payloadBytes[offset++];
-    console.log("length-prefix byte:", byte.toString(16), "| shift:", shift);
-    usernameLength |= (byte & 0x7f) << shift;
-    shift += 7;
-  } while ((byte & 0x80) !== 0);
+  const usernameLength = view.getInt32(offset, false);
+  offset += 4;
 
   console.log("usernameLength:", usernameLength, "| offset now:", offset);
   console.log(
@@ -109,13 +138,13 @@ export function parsePlayersPayload(
   const view = new DataView(payloadBytes.buffer);
   let offset = 0;
 
-  const playerCount = view.getInt32(offset, true);
-  offset += 4;
+  const playerCount = view.getInt16(offset, false);
+  offset += 2;
 
   const players = [];
   for (let i = 0; i < playerCount; i++) {
-    const id = view.getInt32(offset, true);
-    offset += 4;
+    const id = view.getInt16(offset, false);
+    offset += 2;
 
     let usernameLength = 0,
       shift = 0,
@@ -150,10 +179,81 @@ export function parseUpdatePayload(
 
   let offset = 0;
 
-  const eventId = view.getInt32(offset, true);
+  const eventId = view.getInt16(offset, false);
   offset += 4;
 
-  const playerId = view.getInt32(offset, true);
+  const playerId = view.getInt16(offset, false);
 
   return { eventId, playerId };
+}
+
+export function decodeResponse(responseBuffer: ArrayBuffer): ResponseType {
+  // Array that stored the response buffer that can be passed as string into Error constructor
+  const errArr = new Uint8Array(responseBuffer);
+
+  const view = new DataView(responseBuffer);
+  console.log(JSON.stringify(view));
+  if (view.byteLength < SIZEOF_BYTES_COUNTER)
+    throw new Error("The response is invalid, it has one byte!\n" + errArr);
+
+  let offset = 0;
+
+  const responseLength = view.getUint16(offset, false);
+
+  console.log(
+    `[decodeResponse] responseLength from buffer: ${responseLength}, actual byteLength: ${view.byteLength}, buffer bytes: ${[...errArr].join(",")}`,
+  );
+
+  if (responseLength !== view.byteLength)
+    throw new Error(
+      "The response length doesn't correspond to the response counter byte!\n" +
+        `Expected: ${responseLength}, Got: ${view.byteLength}\n` +
+        errArr,
+    );
+
+  if (responseLength < SIZEOF_BYTES_COUNTER + SIZEOF_COMMAND + SIZEOF_EVENTID)
+    throw new Error(
+      "The response length is too small for a valid response!\n" + errArr,
+    );
+
+  offset += SIZEOF_BYTES_COUNTER;
+
+  const responseId = view.getInt8(offset);
+
+  offset += SIZEOF_COMMAND;
+
+  const eventId = view.getInt16(offset, false);
+
+  offset += SIZEOF_EVENTID;
+
+  const dataLength = responseLength - offset;
+
+  const data = new Uint8Array(responseBuffer, offset, dataLength);
+
+  return { responseId, eventId, data };
+}
+
+export function decodeData(responseId: number, data: Uint8Array<ArrayBuffer>) {
+  if (data.byteLength === 0) throw new Error("Data is empty!");
+
+  switch (responseId) {
+    case CMD_LOGIN:
+      return parsePlayerPayload(data);
+
+    case UPD_START:
+      return parsePlayersPayload(data);
+
+    case UPD_PLAYER_JUMPED:
+      if (data.length == 2)
+        return new DataView(data.buffer, 0, data.byteLength).getInt16(0, false);
+      throw new Error("Invalid data length for playerId.");
+
+    case UPD_PLAYER_REMOVED:
+      if (data.length == 2)
+        return new DataView(data.buffer, 0, data.byteLength).getInt16(0, false);
+      throw new Error("Invalid data length for playerId.");
+
+    default:
+      throw new Error("Invalid responseId.");
+  }
 }

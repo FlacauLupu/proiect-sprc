@@ -17,7 +17,7 @@ export type GameFrameHandle = {
 const GameTab = ({ setCurrentTab }: GameProps) => {
   const frameRef = useRef<GameFrameHandle>({} as GameFrameHandle);
 
-  const responses = useContext(ResponsesContext);
+  const { responsesRef } = useContext(ResponsesContext);
 
   const socket = useContext(SocketContext);
 
@@ -25,12 +25,14 @@ const GameTab = ({ setCurrentTab }: GameProps) => {
 
   useEffect(() => {
     const getResponse = async () => {
-      const response = await checkCommandResponse(UPD_START, responses);
+      const response = await checkCommandResponse(UPD_START, responsesRef);
       let currentPlayer: Player | null;
       let players: Array<PlayerState> | null;
 
       try {
         if (response) {
+          console.log(`Start response: ${JSON.stringify(response)}`);
+
           const currentPlayerRaw = sessionStorage.getItem("player");
           const playersRaw = sessionStorage.getItem("players");
 
@@ -60,9 +62,11 @@ const GameTab = ({ setCurrentTab }: GameProps) => {
     <div className="h-screen flex flex-col items-center justify-center">
       <div className="w-270 h-180 bg-black border-4 border-gray-800 rounded-xl shadow-2xl overflow-hidden">
         <div className="w-full h-full flex items-center justify-center text-white text-sm opacity-50">
-          <GameFrame ref={frameRef} />
-
-          {isLoading && <div className="loading-overlay">Loading...</div>}
+          {isLoading ? (
+            <div className="items-center">Loading...</div>
+          ) : (
+            <GameFrame ref={frameRef} />
+          )}
         </div>
       </div>
 

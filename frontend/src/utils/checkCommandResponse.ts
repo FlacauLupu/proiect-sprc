@@ -1,19 +1,21 @@
+import type { Dispatch, RefObject, SetStateAction } from "react";
+import type { ResponseType } from "../types/ResponseType";
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const checkCommandResponse = async (
-  commandId: number,
-  responses: Array<number>,
+  responseId: number,
+  responsesRef: RefObject<Array<ResponseType>>,
 ) => {
-  while (true) {
-    await sleep(100);
-    const found = responses.find((res) => Math.abs(res) === commandId);
+  await sleep(100);
+  const found = responsesRef.current.find(
+    (res) => Math.abs(res.responseId) === responseId,
+  );
 
-    if (found !== undefined) {
-      const index = responses.indexOf(found);
-      responses.splice(index, 1);
-      return found;
-    }
-  }
+  if (found !== undefined)
+    responsesRef.current.splice(responsesRef.current.indexOf(found), 1);
+
+  return found;
 };
 
 export default checkCommandResponse;

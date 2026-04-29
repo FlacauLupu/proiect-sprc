@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"dotnet run --project ../backend\" \"vite\"",
     "dev:front": "vite",
-    "dev:back": "dotnet run --project ./backend",
+    "dev:back": "dotnet run --project ../backend",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"

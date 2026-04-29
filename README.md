@@ -23,7 +23,7 @@ failures:
 -4 - quit game failure
 
 ---UPDATES---
-5 - startGame + payload (eventId: Int, players: Array<Player>)
+5 - startGame + payload (eventId: Int, players: Array<PlayerState>)
 6 - player removed + payload (eventId: Int, playerdId: int)
 7 - player jumped + payload (eventId: Int playerdId: int,)
 

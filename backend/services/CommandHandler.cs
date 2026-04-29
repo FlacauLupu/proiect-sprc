@@ -19,11 +19,15 @@ namespace Backend
 
 
 
-            int playerId;
-            byte[] eventIdBuffer = BitConverter.GetBytes(eventId);
+            short playerId;
+            byte[] eventIdBuffer = new byte[2];
+            eventIdBuffer[0] = (byte)((eventId >> 8) & 0xFF);
+            eventIdBuffer[1] = (byte)(eventId & 0xFF);
             eventId++;
             byte[] responseBuffer;
             commandType = CommandType.Unicast;
+
+            Response response;
 
             try
             {
@@ -41,7 +45,8 @@ namespace Backend
 
                         if (player is null)
                         {
-                            responseBuffer = Commands.CreateResponseBuffer(new Response(AuthCommands.Login, eventIdBuffer, null));
+                            response = new Response(AuthCommands.Login, eventIdBuffer, null);
+                            responseBuffer = Commands.CreateResponseBuffer(response);
                             break;
                         }
 
@@ -53,26 +58,31 @@ namespace Backend
 
                         if (message.data is null)
                         {
-                            responseBuffer = Commands.CreateResponseBuffer(new Response(Commands.InvalidRequest, eventIdBuffer, null));
+                            response = new Response(Commands.InvalidRequest, eventIdBuffer, null);
+
+                            responseBuffer = Commands.CreateResponseBuffer(response);
                             commandType = CommandType.Broadcast;
                             break;
                         }
 
-                        playerId = BitConverter.ToInt32(message.data);
+                        playerId = (short)((message.data[0] << 8) | message.data[1]);
+
                         GameHandler.RemovePlayer(playerId);
 
-
-                        responseBuffer = Commands.CreateResponseBuffer(new Response(ManagerCommands.Play, eventIdBuffer, null));
+                        response = new Response(ManagerCommands.Play, eventIdBuffer, null);
+                        responseBuffer = Commands.CreateResponseBuffer(response);
                         break;
 
                     case ManagerCommands.Play:
                         if (message.data is null)
                         {
-                            responseBuffer = Commands.CreateResponseBuffer(new Response(Commands.InvalidRequest, eventIdBuffer, null));
+                            response = new Response(Commands.InvalidRequest, eventIdBuffer, null);
+                            responseBuffer = Commands.CreateResponseBuffer(response);
                             break;
                         }
 
-                        playerId = BitConverter.ToInt32(message.data);
+                        playerId = (short)((message.data[0] << 8) | message.data[1]);
+                        Console.WriteLine("Player id on server commandhandler: " + playerId);
                         GameHandler.AddPlayer(playerId);
                         byte[] status = [1];
 
@@ -83,47 +93,57 @@ namespace Backend
                                 commandType = CommandType.Broadcast;
                         }
 
-                        responseBuffer = Commands.CreateResponseBuffer(new Response(ManagerCommands.Play, eventIdBuffer, status));
+                        response = new Response(ManagerCommands.Play, eventIdBuffer, status);
+                        responseBuffer = Commands.CreateResponseBuffer(response);
                         break;
 
                     case ManagerCommands.Quit:
                         if (message.data is null)
                         {
+                            response = new Response(Commands.InvalidRequest, eventIdBuffer, null);
                             responseBuffer = Commands.CreateResponseBuffer(new Response(Commands.InvalidRequest, eventIdBuffer, null));
                             commandType = CommandType.Broadcast;
                             break;
                         }
 
-                        playerId = BitConverter.ToInt32(message.data);
+                        playerId = (short)((message.data[0] << 8) | message.data[1]);
+
                         GameHandler.RemovePlayer(playerId);
 
                         commandType = CommandType.Broadcast;
 
-                        responseBuffer = Commands.CreateResponseBuffer(new Response(ManagerCommands.Quit, eventIdBuffer, null));
+                        response = new Response(ManagerCommands.Quit, eventIdBuffer, null);
+                        responseBuffer = Commands.CreateResponseBuffer(response);
                         break;
 
                     case MovingCommands.Up:
                         if (message.data is null)
                         {
-                            responseBuffer = Commands.CreateResponseBuffer(new Response(Commands.InvalidRequest, eventIdBuffer, null));
+                            response = new Response(Commands.InvalidRequest, eventIdBuffer, null);
+                            responseBuffer = Commands.CreateResponseBuffer(response);
                             break;
                         }
 
-                        playerId = BitConverter.ToInt32(message.data);
+                        playerId = (short)((message.data[0] << 8) | message.data[1]);
+
 
                         if (!GameHandler.DoesPlayerExist(playerId))
                         {
-                            responseBuffer = Commands.CreateResponseBuffer(new Response(Commands.InvalidRequest, eventIdBuffer, null));
+                            response = new Response(Commands.InvalidRequest, eventIdBuffer, null);
+                            responseBuffer = Commands.CreateResponseBuffer(response);
                             break;
                         }
 
                         commandType = CommandType.Broadcast;
-                        responseBuffer = Commands.CreateResponseBuffer(new Response(MovingCommands.Up, eventIdBuffer, message.data));
+
+                        response = new Response(MovingCommands.Up, eventIdBuffer, message.data);
+                        responseBuffer = Commands.CreateResponseBuffer(response);
 
                         break;
 
                     default:
-                        responseBuffer = Commands.CreateResponseBuffer(new Response(Commands.InvalidRequest, eventIdBuffer, null));
+                        response = new Response(Commands.InvalidRequest, eventIdBuffer, null);
+                        responseBuffer = Commands.CreateResponseBuffer(response);
                         break;
 
                 }
@@ -142,13 +162,11 @@ namespace Backend
 
         public static void ExecuteCommand(CommandType commandType, byte[] responseBuffer)
         {
-            Console.WriteLine("dadas");
 
             if (socket is null) return;
 
             if (commandType == CommandType.Broadcast) Server.Broadcast(responseBuffer);
             else if (commandType == CommandType.Unicast) Server.SendResponse(socket, responseBuffer);
-            Console.WriteLine("dadas1231");
 
 
         }
