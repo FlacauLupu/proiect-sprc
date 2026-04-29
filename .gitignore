@@ -23,4 +23,5 @@ backend/*.suo
 npm-debug.log*
 
 frontend/game.db
+frontend/env/*
 backend/game.db

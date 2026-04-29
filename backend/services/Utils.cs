@@ -78,7 +78,7 @@ namespace Backend
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
             {
-                WriteInt32BE(writer, playerStates.Count);
+                WriteInt16BE(writer, (short)playerStates.Count);
 
                 foreach (var p in playerStates)
                 {

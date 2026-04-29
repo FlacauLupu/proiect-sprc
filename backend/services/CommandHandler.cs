@@ -12,7 +12,6 @@ namespace Backend
     {
         public static Socket? socket;
         private static CommandType commandType;
-        public static short eventId = 1;
 
         public static void ProcessMessage(Message message)
         {
@@ -29,7 +28,6 @@ namespace Backend
 
             try
             {
-                eventId++;
 
                 Player? player;
                 switch (message.command)
@@ -83,16 +81,25 @@ namespace Backend
                         }
 
                         playerId = (short)((message.data[0] << 8) | message.data[1]);
+                        Console.WriteLine(BitConverter.ToString(message.data));
+
 
                         player = Database.GetPlayerById(playerId);
 
                         // check if player exist in the database and if it is already in the game
                         if (player is not null && !GameHandler.playersDict.ContainsKey(player.Id))
+                        {
+                            Console.WriteLine("EXECUTED");
                             GameHandler.AddPlayer(player);
-                        else response = new Response(ManagerCommands.Play, EventId.GetEventIdBuffer(), null);
+                            response = new Response(ManagerCommands.Play, EventId.GetEventIdBuffer(), null);
+                        }
 
+                        else
+                        {
+                            Console.WriteLine("NOT EXECUTED");
 
-                        response = new Response(ManagerCommands.Play, EventId.GetEventIdBuffer(), null);
+                            response = new Response(ManagerCommands.Play, EventId.GetEventIdBuffer(), null);
+                        }
                         responseBuffer = Commands.CreateResponseBuffer(response);
                         break;
 

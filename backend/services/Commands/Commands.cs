@@ -47,7 +47,13 @@ namespace Backend
             byte command = messageBuffer[offset];
             offset += sizeof(byte);
 
-            byte[] data = messageBuffer[offset..];
+            int dataLength = messageLength - offset;
+
+            if (dataLength < 0 || offset + dataLength > messageBuffer.Length)
+                return new Message(command, Array.Empty<byte>(), messageLength);
+
+            byte[] data = new byte[dataLength];
+            Buffer.BlockCopy(messageBuffer, offset, data, 0, dataLength);
 
             return new Message(command, data, messageLength);
         }

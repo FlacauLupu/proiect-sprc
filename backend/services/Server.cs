@@ -35,11 +35,11 @@ namespace Backend
                 if (_listener.Poll(1000, SelectMode.SelectRead))
                 {
                     Socket client = _listener.Accept();
-                    lock (_lock) { _connectedClients.Add(client); }
+                    // lock (_lock) { _connectedClients.Add(client); }
                     Task.Run(() => HandleClient(client));
 
                     // Inside HandleClient() in the 'break' block (disconnect)
-                    lock (_lock) { _connectedClients.Remove(client); }
+
                 }
             }
         }
@@ -76,47 +76,59 @@ namespace Backend
         {
             bool handshaked = false;
 
-            List<byte> buffer = new List<byte>(); // persistent buffer
-            byte[] temp = new byte[1024]; // read chunks
+            lock (_lock)
+                _connectedClients.Add(client);
 
-            while (client.Connected)
+            try
             {
-                int received = client.Receive(temp);
+                byte[] temp = new byte[1024];
 
-                if (received == 0)
-                    break;
-
-                if (!handshaked)
+                while (true)
                 {
-                    string request = Encoding.UTF8.GetString(temp, 0, received);
+                    int received;
 
-                    HandleHandshake(client, request);
-                    handshaked = true;
-                    continue;
+                    try
+                    {
+                        received = client.Receive(temp);
+                    }
+                    catch
+                    {
+                        break; // connection dropped
+                    }
 
-                }
+                    if (received == 0)
+                        break;
 
-                try
-                {
+                    if (!handshaked)
+                    {
+                        string request = Encoding.UTF8.GetString(temp, 0, received);
+                        HandleHandshake(client, request);
+                        handshaked = true;
+                        continue;
+                    }
+
                     byte[] decodedPayload = UnmaskData(temp, received);
                     if (!ValidatePayload(decodedPayload)) continue;
 
                     Message message = Commands.DecodeMessageBuffer(decodedPayload);
+                    if (message.data is not null)
+                        Console.WriteLine(BitConverter.ToString(message.data));
                     CommandHandler.ProcessMessage(message);
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("ERROR: " + ex.StackTrace);
-                }
-
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine("ERROR: " + ex);
+            }
+            finally
+            {
+                lock (_lock)
+                    _connectedClients.Remove(client);
 
-
-
-            buffer.Clear();
-
+                try { client.Shutdown(SocketShutdown.Both); } catch { }
+                client.Close();
+            }
         }
-
         private void HandleHandshake(Socket client, string data)
         {
             var match = Regex.Match(data, "Sec-WebSocket-Key: (.*)");

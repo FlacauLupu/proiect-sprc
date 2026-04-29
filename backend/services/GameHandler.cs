@@ -12,23 +12,22 @@ namespace Backend
             if (gameState != GameState.Running)
             {
                 playersDict[player.Id] = new PlayerState(player);
+                Console.WriteLine("Player joined: " + player.Id);
 
                 gameState = GameState.Idle;
             }
 
             if (playersDict.Count == 2)
             {
-                byte[] eventIdBuffer = new byte[2];
-                eventIdBuffer[0] = (byte)((CommandHandler.eventId >> 8) & 0xFF);
-                eventIdBuffer[1] = (byte)(CommandHandler.eventId & 0xFF);
 
                 byte[] playerStatesBuffer = Utils.SerializePlayerStates(playersDict.Values.ToList());
 
-                Response response = new Response(ManagerCommands.Start, eventIdBuffer, playerStatesBuffer);
+                Response response = new Response(ManagerCommands.Start, EventId.GetEventIdBuffer(), playerStatesBuffer);
                 byte[] resposeBuffer = Commands.CreateResponseBuffer(response);
 
                 CommandHandler.ExecuteCommand(CommandType.Broadcast, resposeBuffer);
                 gameState = GameState.Running;
+                Console.WriteLine("Game is starting!");
             }
 
         }
@@ -38,20 +37,27 @@ namespace Backend
             if (gameState == GameState.Running || gameState == GameState.Idle)
             {
 
-                playersDict.Remove(playerId);
+                if (playersDict.Remove(playerId))
+                {
+                    Console.WriteLine("Player was removed: " + playerId);
 
-
-                if (playersDict.Count == 0)
-                    gameState = GameState.Stopped;
-                else if (playersDict.Count < 2)
-                    gameState = GameState.Idle;
+                    if (playersDict.Count == 0)
+                        gameState = GameState.Stopped;
+                    else if (playersDict.Count < 2)
+                        gameState = GameState.Idle;
+                }
             }
         }
 
 
         public static void PlayerDie(short playerId)
         {
-            playersDict[playerId].alive = false;
+            if (playersDict.TryGetValue(playerId, out var player))
+            {
+                player.alive = false;
+                Console.WriteLine("Player died: " + playerId);
+            }
+
         }
 
         public class PlayerState
