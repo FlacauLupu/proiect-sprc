@@ -11,7 +11,7 @@ namespace Backend
 
         public static void AddPlayer(Player player)
         {
-            if (gameState != GameState.Running)
+            if (true || gameState != GameState.Running)
             {
                 playersDict[player.Id] = new PlayerState(player);
                 Console.WriteLine("Player joined: " + player.Id);
@@ -19,7 +19,7 @@ namespace Backend
                 gameState = GameState.Idle;
             }
 
-            if (playersDict.Count == 1)
+            if (playersDict.Count == 2)
             {
 
                 byte[] playerStatesBuffer = Utils.SerializePlayerStates(playersDict.Values.ToList());

@@ -111,12 +111,13 @@ export default class MainScene extends Phaser.Scene {
       if (player.playerId !== this.currentPlayer.playerId)
         this.createBird(player, "enemy");
       else this.createBird(player, "player");
+      this.pipes = this.add.group();
 
       this.physics.add.overlap(
         player.bird,
         this.pipes,
         () => {
-          this.hitPipe(player);
+          this.setPlayerDeath(player);
         },
         undefined,
         this,
@@ -135,8 +136,6 @@ export default class MainScene extends Phaser.Scene {
       },
       this,
     );
-
-    this.pipes = this.add.group();
 
     this.scoreText = this.add.text(20, 20, "Score: 0", {
       fontSize: "32px",
@@ -158,11 +157,11 @@ export default class MainScene extends Phaser.Scene {
       const player = this.players[playerId];
       if (!player || !player.bird) continue;
 
-      this.flap(player.bird);
+      this.flap(player);
     }
 
     while (!this.playersOutQueue.isEmpty()) {
-      console.log();
+      console.log("from server");
       const playerThatLeft = this.playersOutQueue.shift();
       this.players[playerThatLeft].bird.active = false;
       this.players[playerThatLeft].bird.setTint(0xff0000);
@@ -216,13 +215,15 @@ export default class MainScene extends Phaser.Scene {
     return bird;
   }
 
-  flap(bird: BirdType) {
-    bird.setVelocityY(-350);
+  flap(player: PlayerState) {
+    player.bird.setVelocityY(-350);
     this.tweens.add({
-      targets: bird,
+      targets: player.bird,
       angle: -20,
       duration: 100,
     });
+    if (player.bird.y <= 0 || player.bird.y >= this.scale.height)
+      this.setPlayerDeath(player);
   }
 
   spawnPipes() {
@@ -314,12 +315,9 @@ export default class MainScene extends Phaser.Scene {
     }
   }
 
-  hitPipe(player: PlayerState) {
+  setPlayerDeath(player: PlayerState) {
+    console.log("player death called");
     if (this.socket) dispatchPlayerDeath(this.socket, player.playerId);
-  }
-
-  currentPlayerDied() {
-    // print a message that the player is dead and watching as spectator, print its score, message is transparent
   }
 
   gameOver() {
