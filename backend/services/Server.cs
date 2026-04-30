@@ -108,12 +108,12 @@ namespace Backend
                     }
 
                     byte[] decodedPayload = UnmaskData(temp, received);
-                    if (!ValidatePayload(decodedPayload)) continue;
+                    if (!ValidatePayload(decodedPayload, client)) continue;
 
                     Message message = Commands.DecodeMessageBuffer(decodedPayload);
                     if (message.data is not null)
                         Console.WriteLine(BitConverter.ToString(message.data));
-                    CommandHandler.ProcessMessage(message);
+                    CommandHandler.ProcessMessage(message, client);
                 }
             }
             catch (Exception ex)
@@ -148,7 +148,6 @@ namespace Backend
 
             client.Send(Encoding.UTF8.GetBytes(response));
 
-            CommandHandler.socket = client;
             Console.WriteLine("Handshake sent! Postman should now be 'Connected'.");
         }
 
@@ -204,14 +203,14 @@ namespace Backend
             }
         }
 
-        private bool ValidatePayload(byte[] buffer)
+        private bool ValidatePayload(byte[] buffer, Socket socket)
         {
             short length = (short)((buffer[0] << 8) | buffer[1]);
 
             if (buffer.Length != length)
             {
                 byte[] responseBuffer = Commands.CreateResponseBuffer(new Response(Commands.MalformedCommand, BitConverter.GetBytes((short)0), null));
-                CommandHandler.ExecuteCommand(CommandType.Unicast, responseBuffer);
+                CommandHandler.ExecuteCommand(CommandType.Unicast, responseBuffer, socket);
                 return false;
             }
 

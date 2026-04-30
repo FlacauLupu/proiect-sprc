@@ -1,43 +1,32 @@
 import { forwardRef, useImperativeHandle, useRef, useEffect } from "react";
 import Phaser from "phaser";
 import type { GameFrameHandle } from "./Game";
-import MainScene from "../scenes/MainScene";
-import type { Player, PlayerState } from "../types/Player";
+import MainScene from "../scenes/MainScene.ts";
 
 const GameFrame = forwardRef<GameFrameHandle, {}>((_props, ref) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
-  const sceneRef = useRef<any>(null);
-
-  const currentPlayerRef = useRef<Player | null>(null);
-  const playersRef = useRef<Record<number, PlayerState>>({});
-  const socketRef = useRef<WebSocket | null>(null);
 
   useImperativeHandle(ref, () => ({
-    setGameState(gameState: any) {
-      currentPlayerRef.current = gameState.currentPlayer;
-      playersRef.current = gameState.players;
-      socketRef.current = gameState.socket;
-    },
-    getGameState() {},
-    startGame() {
-      gameRef.current?.scene.start("MainScene", {
-        currentPlayer: currentPlayerRef.current,
-        players: playersRef.current,
-        socket: socketRef.current,
-      });
+    startGame(gameState: any) {
+      if (!gameRef.current) return;
+
+      // IMPORTANT: pass data directly here
+      gameRef.current.scene.start("MainScene", gameState);
     },
 
     stopGame() {
       gameRef.current?.scene.stop("MainScene");
     },
+
+    getGameState() {
+      return null;
+    },
   }));
 
   useEffect(() => {
     if (!containerRef.current) return;
-
-    const storedPlayer = sessionStorage.getItem("player");
-    if (storedPlayer) currentPlayerRef.current = JSON.parse(storedPlayer);
+    if (gameRef.current) return;
 
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
@@ -53,21 +42,13 @@ const GameFrame = forwardRef<GameFrameHandle, {}>((_props, ref) => {
         },
       },
       scene: MainScene,
-      scale: {
-        mode: Phaser.Scale.NONE,
-        autoCenter: Phaser.Scale.CENTER_BOTH,
-      },
     };
 
-    // @ts-ignore
-    const game = new Phaser.Game(config);
-
-    gameRef.current = game;
+    gameRef.current = new Phaser.Game(config);
 
     return () => {
-      game.destroy(true);
+      gameRef.current?.destroy(true);
       gameRef.current = null;
-      sceneRef.current = null;
     };
   }, []);
 

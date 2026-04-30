@@ -8,48 +8,56 @@ import type { Player, PlayerState } from "../types/Player";
 interface GameProps {
   setCurrentTab: React.Dispatch<React.SetStateAction<string>>;
 }
+
 export type GameFrameHandle = {
-  setGameState: (gameState: any) => void;
-  getGameState: () => any;
-  startGame: () => void;
+  startGame: (gameState: any) => void;
   stopGame: () => void;
+  getGameState: () => any;
 };
-const GameTab = ({ setCurrentTab }: GameProps) => {
-  const frameRef = useRef<GameFrameHandle>({} as GameFrameHandle);
 
+const Game = ({ setCurrentTab }: GameProps) => {
+  const frameRef = useRef<GameFrameHandle | null>(null);
   const { responsesRef } = useContext(ResponsesContext);
-
   const socket = useContext(SocketContext);
-
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const getResponse = async () => {
       const response = await checkCommandResponse(UPD_START, responsesRef);
-      let currentPlayer: Player | null;
-      let players: Array<PlayerState> | null;
 
       try {
-        if (response) {
-          console.log(`Start response: ${JSON.stringify(response)}`);
+        if (!response) return;
 
-          const currentPlayerRaw = sessionStorage.getItem("player");
-          const playersRaw = sessionStorage.getItem("players");
+        const currentPlayerRaw = sessionStorage.getItem("player");
+        const playersRaw = sessionStorage.getItem("players");
 
-          if (currentPlayerRaw && playersRaw && socket) {
-            currentPlayer = JSON.parse(currentPlayerRaw);
-            players = JSON.parse(playersRaw);
-          } else throw new Error("Error starting the game!");
-
-          frameRef.current?.setGameState({
-            currentPlayer,
-            players,
-            socket,
-          });
-          setIsLoading(false);
-
-          frameRef?.current.startGame();
+        if (!currentPlayerRaw || !playersRaw || !socket) {
+          throw new Error("Error starting the game!");
         }
+
+        const parsedCurrent: Player = JSON.parse(currentPlayerRaw);
+        const parsedPlayers: Array<Player> = JSON.parse(playersRaw);
+
+        const playersRecord: Record<number, PlayerState> = {};
+        parsedPlayers.forEach((p) => {
+          playersRecord[p.id] = { playerId: p.id, bird: null as any };
+        });
+
+        const currentPlayerState: PlayerState = {
+          playerId: parsedCurrent.id,
+          bird: null as any,
+        };
+
+        const gameState = {
+          currentPlayer: currentPlayerState,
+          players: playersRecord,
+          socket,
+        };
+
+        setIsLoading(false);
+
+        console.log("GAME STAET: " + JSON.stringify(gameState));
+        frameRef.current?.startGame(gameState);
       } catch (err: any) {
         console.error(err.message);
       }
@@ -85,4 +93,4 @@ const GameTab = ({ setCurrentTab }: GameProps) => {
   );
 };
 
-export default GameTab;
+export default Game;

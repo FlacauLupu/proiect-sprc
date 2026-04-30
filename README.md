@@ -4,8 +4,8 @@ commands: first byte
 2 - logout + payload (playerdId: int)
 3 - play game + payload (playerdId: int)
 4 - quit game + payload (playerdId: int)
-5 - jump + payload (playerdId: int)
-6 - die + payload (playerdId: int)
+6 - jump + payload (playerdId: int)
+7 - die + payload (playerdId: int)
 
 responses: first byte
 success:
@@ -24,8 +24,8 @@ failures:
 
 ---UPDATES---
 5 - startGame + payload (eventId: Int, players: Array<PlayerState>)
-6 - player removed + payload (eventId: Int, playerdId: int)
-7 - player jumped + payload (eventId: Int playerdId: int,)
+6 - player jumped + payload (eventId: Int playerdId: int,)
+7 - player removed + payload (eventId: Int, playerdId: int)
 
 payload:
 

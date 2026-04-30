@@ -1,7 +1,8 @@
 namespace Backend
 {
-    public class MovingCommands : Commands
+    public class GameCommands : Commands
     {
-        public const byte Up = 5;
+        public const byte Up = 6;
+        public const byte Die = 7;
     }
 }

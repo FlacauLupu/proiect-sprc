@@ -7,14 +7,14 @@ export const CMD_LOGIN = 1;
 export const CMD_LOGOUT = 2;
 export const CMD_PLAY = 3;
 export const CMD_QUIT = 4;
-export const CMD_JUMP = 5;
-export const CMD_DEATH = 6;
+export const CMD_JUMP = 6;
+export const CMD_DEATH = 7;
 
 // Updates
 export const UPD_LOGIN = 1;
 export const UPD_START = 5;
-export const UPD_PLAYER_REMOVED = 6;
-export const UPD_PLAYER_JUMPED = 7;
+export const UPD_PLAYER_JUMPED = 6;
+export const UPD_PLAYER_REMOVED = 7;
 
 const SIZEOF_BYTES_COUNTER = 2;
 const SIZEOF_COMMAND = 1;
@@ -40,7 +40,8 @@ export const dispatchCommand = (
 
   offset += SIZEOF_COMMAND;
 
-  new Uint8Array(message).set(payload, offset);
+  // new Uint8Array(message).set(payload, offset);
+  new Uint8Array(message).set(new Uint8Array(payload), offset);
 
   socket.send(message);
 };
@@ -124,9 +125,10 @@ export function parsePlayerPayload(payloadBytes: Uint8Array<ArrayBuffer>) {
 
   const username = new TextDecoder("utf-8").decode(usernameBytes);
   offset += usernameLength;
-
-  const coins = payloadBytes[offset++];
-  const skill = payloadBytes[offset++];
+  const coins = view.getInt32(offset, false);
+  offset += 4;
+  const skill = view.getInt32(offset, false);
+  offset += 4;
 
   const player: Player = { id, username, coins, skill };
   return player;
@@ -135,7 +137,11 @@ export function parsePlayerPayload(payloadBytes: Uint8Array<ArrayBuffer>) {
 export function parsePlayersPayload(
   payloadBytes: Uint8Array<ArrayBuffer>,
 ): Array<Player> {
-  const view = new DataView(payloadBytes.buffer);
+  const view = new DataView(
+    payloadBytes.buffer,
+    payloadBytes.byteOffset,
+    payloadBytes.byteLength,
+  );
   let offset = 0;
 
   const playerCount = view.getInt16(offset, false);
@@ -146,25 +152,22 @@ export function parsePlayersPayload(
     const id = view.getInt16(offset, false);
     offset += 2;
 
-    let usernameLength = 0,
-      shift = 0,
-      b;
-    do {
-      b = payloadBytes[offset++];
-      usernameLength |= (b & 0x7f) << shift;
-      shift += 7;
-    } while ((b & 0x80) !== 0);
+    const usernameLength = view.getInt32(offset, false);
+    offset += 4;
 
     const name = new TextDecoder().decode(
       payloadBytes.slice(offset, offset + usernameLength),
     );
     offset += usernameLength;
 
-    const coins = payloadBytes[offset++];
-    const skill = payloadBytes[offset++];
+    const coins = view.getInt32(offset, false);
+    offset += 4;
+    const skill = view.getInt32(offset, false);
+    offset += 4;
 
     players.push({ id, username: name, coins, skill });
   }
+
   return players;
 }
 
@@ -180,9 +183,10 @@ export function parseUpdatePayload(
   let offset = 0;
 
   const eventId = view.getInt16(offset, false);
-  offset += 4;
+  offset += 2;
 
   const playerId = view.getInt16(offset, false);
+  offset += 2;
 
   return { eventId, playerId };
 }
@@ -244,13 +248,21 @@ export function decodeData(responseId: number, data: Uint8Array<ArrayBuffer>) {
       return parsePlayersPayload(data);
 
     case UPD_PLAYER_JUMPED:
-      if (data.length == 2)
-        return new DataView(data.buffer, 0, data.byteLength).getInt16(0, false);
+      if (data.byteLength == 2)
+        return new DataView(
+          data.buffer,
+          data.byteOffset,
+          data.byteLength,
+        ).getInt16(0, false);
       throw new Error("Invalid data length for playerId.");
 
     case UPD_PLAYER_REMOVED:
-      if (data.length == 2)
-        return new DataView(data.buffer, 0, data.byteLength).getInt16(0, false);
+      if (data.byteLength == 2)
+        return new DataView(
+          data.buffer,
+          data.byteOffset,
+          data.byteLength,
+        ).getInt16(0, false);
       throw new Error("Invalid data length for playerId.");
 
     default:

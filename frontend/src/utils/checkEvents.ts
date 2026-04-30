@@ -19,24 +19,25 @@ const checkInGameEvents = (
   const handler = (e: MessageEvent) => {
     try {
       const response = decodeResponse(e.data);
-      const playerId = decodeData(response.responseId, response.data);
 
       if (inGameSeenEvents.has(response.eventId)) return;
       inGameSeenEvents.add(response.eventId);
 
       if (response.responseId === UPD_PLAYER_JUMPED) {
+        const playerId = decodeData(response.responseId, response.data);
         jumpQueue.push(playerId);
         return;
       }
 
       if (response.responseId === UPD_PLAYER_REMOVED) {
+        const playerId = decodeData(response.responseId, response.data);
         playersOutQueue.push(playerId);
       }
     } catch (err: any) {
       console.error("Error: " + err.message);
     }
-    socket.addEventListener("message", handler);
   };
+  socket.addEventListener("message", handler);
 
   return () => {
     socket.removeEventListener("message", handler);
@@ -49,8 +50,6 @@ const checkOutGameEvents = (
   responsesRef: RefObject<Array<ResponseType>>,
 ) => {
   const handler = (e: MessageEvent) => {
-    console.log("1");
-
     try {
       const response = decodeResponse(e.data);
 
@@ -68,7 +67,10 @@ const checkOutGameEvents = (
           const player = decodeData(response.responseId, response.data);
 
           sessionStorage.setItem("player", JSON.stringify(player));
-        } else if (response.responseId === UPD_START) {
+        } else if (
+          response.responseId === UPD_START &&
+          response.data.byteLength > 2
+        ) {
           const players = decodeData(response.responseId, response.data);
 
           sessionStorage.setItem("players", JSON.stringify(players));

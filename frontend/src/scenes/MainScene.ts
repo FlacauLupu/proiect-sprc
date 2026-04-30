@@ -6,6 +6,9 @@ import {
   dispatchPlayerDeath,
   dispatchPlayerJump,
 } from "../utils/WebSocketCommands";
+import type { Player } from "../types/Player";
+
+import { initializeHandshake } from "../utils/WebSocketConnection";
 
 type BirdType = Phaser.Physics.Arcade.Sprite;
 
@@ -32,7 +35,7 @@ export default class MainScene extends Phaser.Scene {
     super({ key: "MainScene" });
   }
 
-  init(data: any) {
+  setupGame(data: any) {
     this.currentPlayer = data.currentPlayer;
     this.players = data.players;
     this.socket = data.socket;
@@ -42,6 +45,35 @@ export default class MainScene extends Phaser.Scene {
     this.jumpQueue = new Denque();
     this.playersOutQueue = new Denque();
     this.seenEvents = new Set<number>();
+  }
+
+  init(data: any) {
+    this.setupGame(data);
+
+    let tempPlayer = sessionStorage.getItem("player");
+    let tempPlayers = sessionStorage.getItem("players");
+
+    if (tempPlayer && tempPlayers) {
+      const parsedCurrent: Player = JSON.parse(tempPlayer);
+      const parsedPlayers: Array<Player> = JSON.parse(tempPlayers);
+
+      this.players = {};
+      parsedPlayers.forEach((p) => {
+        this.players[p.id] = { playerId: p.id, bird: null as any };
+      });
+
+      this.currentPlayer = {
+        playerId: parsedCurrent.id,
+        bird: null as any,
+      };
+      console.log(
+        "INIT DATA:" +
+          JSON.stringify(this.players) +
+          JSON.stringify(this.currentPlayer),
+      );
+
+      this.socket = initializeHandshake();
+    }
   }
 
   preload() {
@@ -75,12 +107,31 @@ export default class MainScene extends Phaser.Scene {
     const { width, height } = this.scale;
     this.physics.world.setBounds(0, 0, width, height);
 
-    this.input.on("pointerdown", this.flap, this);
+    Object.values(this.players).forEach((player) => {
+      if (player.playerId !== this.currentPlayer.playerId)
+        this.createBird(player, "enemy");
+      else this.createBird(player, "player");
+
+      this.physics.add.overlap(
+        player.bird,
+        this.pipes,
+        () => {
+          this.hitPipe(player);
+        },
+        undefined,
+        this,
+      );
+    });
+
+    this.currentPlayer.bird = this.players[this.currentPlayer.playerId].bird;
+
     this.input.keyboard?.on(
       "keydown-SPACE",
       () => {
-        if (this.socket)
+        if (this.socket) {
           dispatchPlayerJump(this.socket, this.currentPlayer.playerId);
+          console.log("dipatch jump");
+        }
       },
       this,
     );
@@ -98,30 +149,20 @@ export default class MainScene extends Phaser.Scene {
       callbackScope: this,
       loop: true,
     });
-
-    Object.values(this.players).forEach((player) => {
-      const type =
-        player.playerId === this.currentPlayer.playerId ? "player" : "enemy";
-      this.createBird(player.bird, type);
-
-      this.physics.add.overlap(
-        player.bird,
-        this.pipes,
-        () => {
-          this.hitPipe(player);
-        },
-        undefined,
-        this,
-      );
-    });
   }
   update() {
-    while (this.jumpQueue.size) {
-      const playerThatJumped = this.jumpQueue.shift();
-      this.flap(playerThatJumped);
+    while (!this.jumpQueue.isEmpty()) {
+      const playerId = this.jumpQueue.shift();
+      console.log("Player that jumped: " + playerId);
+
+      const player = this.players[playerId];
+      if (!player || !player.bird) continue;
+
+      this.flap(player.bird);
     }
 
-    while (this.playersOutQueue.size) {
+    while (!this.playersOutQueue.isEmpty()) {
+      console.log();
       const playerThatLeft = this.playersOutQueue.shift();
       this.players[playerThatLeft].bird.active = false;
       this.players[playerThatLeft].bird.setTint(0xff0000);
@@ -165,11 +206,14 @@ export default class MainScene extends Phaser.Scene {
     });
   }
 
-  createBird(bird: PlayerState["bird"], type: string) {
-    bird = this.physics.add.sprite(220, this.scale.height / 2, type);
+  createBird(player: PlayerState, type: string) {
+    const bird = this.physics.add.sprite(220, this.scale.height / 2, type);
     bird.setCollideWorldBounds(true);
     (bird.body as Phaser.Physics.Arcade.Body).setGravityY(800);
     bird.setCircle(12);
+    player.bird = bird;
+    console.log(JSON.stringify(player.bird));
+    return bird;
   }
 
   flap(bird: BirdType) {
@@ -279,6 +323,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   gameOver() {
+    console.log("game over");
     this.physics.pause();
     this.pipeTimer?.remove(false);
   }

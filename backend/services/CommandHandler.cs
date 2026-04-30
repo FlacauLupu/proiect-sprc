@@ -10,10 +10,9 @@ namespace Backend
 {
     public static class CommandHandler
     {
-        public static Socket? socket;
         private static CommandType commandType;
 
-        public static void ProcessMessage(Message message)
+        public static void ProcessMessage(Message message, Socket socket)
         {
             if (socket is null)
             {
@@ -81,7 +80,9 @@ namespace Backend
                         }
 
                         playerId = (short)((message.data[0] << 8) | message.data[1]);
-                        Console.WriteLine(BitConverter.ToString(message.data));
+                        // Console.WriteLine("Play: " + BitConverter.ToString(message.data));
+                        Console.WriteLine("Play: " + message.data.Length);
+
 
 
                         player = Database.GetPlayerById(playerId);
@@ -122,7 +123,7 @@ namespace Backend
                         responseBuffer = Commands.CreateResponseBuffer(response);
                         break;
 
-                    case MovingCommands.Up:
+                    case GameCommands.Up:
                         if (message.data is null)
                         {
                             response = new Response(Commands.InvalidRequest, EventId.GetEventIdBuffer(), null);
@@ -142,10 +143,35 @@ namespace Backend
 
                         commandType = CommandType.Broadcast;
 
-                        response = new Response(MovingCommands.Up, EventId.GetEventIdBuffer(), message.data);
+                        response = new Response(GameCommands.Up, EventId.GetEventIdBuffer(), message.data);
                         responseBuffer = Commands.CreateResponseBuffer(response);
 
                         break;
+
+                    case GameCommands.Die:
+                        {
+                            if (message.data is null)
+                            {
+                                response = new Response(Commands.InvalidRequest, EventId.GetEventIdBuffer(), null);
+                                responseBuffer = Commands.CreateResponseBuffer(response);
+                                break;
+                            }
+                            playerId = (short)((message.data[0] << 8) | message.data[1]);
+
+                            if (!GameHandler.playersDict.ContainsKey(playerId))
+                            {
+                                response = new Response(Commands.InvalidRequest, EventId.GetEventIdBuffer(), null);
+                                responseBuffer = Commands.CreateResponseBuffer(response);
+                                break;
+                            }
+
+                            commandType = CommandType.Broadcast;
+
+                            response = new Response(GameCommands.Die, EventId.GetEventIdBuffer(), message.data);
+                            responseBuffer = Commands.CreateResponseBuffer(response);
+
+                            break;
+                        }
 
                     default:
                         response = new Response(Commands.InvalidRequest, EventId.GetEventIdBuffer(), null);
@@ -153,7 +179,7 @@ namespace Backend
                         break;
 
                 }
-                ExecuteCommand(commandType, responseBuffer);
+                ExecuteCommand(commandType, responseBuffer, socket);
 
 
             }
@@ -166,13 +192,15 @@ namespace Backend
 
         }
 
-        public static void ExecuteCommand(CommandType commandType, byte[] responseBuffer)
+        public static void ExecuteCommand(CommandType commandType, byte[] responseBuffer, Socket? socket)
         {
 
-            if (socket is null) return;
 
             if (commandType == CommandType.Broadcast) Server.Broadcast(responseBuffer);
-            else if (commandType == CommandType.Unicast) Server.SendResponse(socket, responseBuffer);
+            else if (socket is not null && commandType == CommandType.Unicast)
+                Server.SendResponse(socket, responseBuffer);
+
+            return;
 
 
         }

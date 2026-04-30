@@ -39,6 +39,7 @@ namespace Backend
 
         public static Message DecodeMessageBuffer(byte[] messageBuffer)
         {
+            Console.WriteLine("FULL BUFFER: " + BitConverter.ToString(messageBuffer));
             int offset = 0;
 
             short messageLength = (short)((messageBuffer[0] << 8) | messageBuffer[1]);

@@ -1,4 +1,6 @@
 
+using System.Net.Sockets;
+
 namespace Backend
 {
     public static class GameHandler
@@ -17,7 +19,7 @@ namespace Backend
                 gameState = GameState.Idle;
             }
 
-            if (playersDict.Count == 2)
+            if (playersDict.Count == 1)
             {
 
                 byte[] playerStatesBuffer = Utils.SerializePlayerStates(playersDict.Values.ToList());
@@ -25,10 +27,11 @@ namespace Backend
                 Response response = new Response(ManagerCommands.Start, EventId.GetEventIdBuffer(), playerStatesBuffer);
                 byte[] resposeBuffer = Commands.CreateResponseBuffer(response);
 
-                CommandHandler.ExecuteCommand(CommandType.Broadcast, resposeBuffer);
+                CommandHandler.ExecuteCommand(CommandType.Broadcast, resposeBuffer, null);
                 gameState = GameState.Running;
                 Console.WriteLine("Game is starting!");
             }
+            else Console.WriteLine("Player count: " + playersDict.Count);
 
         }
 
