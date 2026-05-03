@@ -9,7 +9,7 @@ import {
 } from "react";
 import Menu from "./components/Menu.tsx";
 import PlayerNameDialogue from "./components/PlayerNameDialogue.tsx";
-import GameTab from "./components/Game.tsx";
+import GameTab from "./components/GameTab.tsx";
 import { initializeHandshake } from "./utils/WebSocketConnection.ts";
 import { checkOutGameEvents } from "./utils/checkEvents.ts";
 import type { ResponseType } from "./types/ResponseType.ts";
@@ -49,6 +49,10 @@ const App = () => {
     // outGameSeenEventsRef.current = outGameSeenEvents;
 
     checkOutGameEvents(sock, outGameSeenEventsRef, responsesRef);
+
+    window.addEventListener("beforeunload", () => {
+      sock.close(1000, "Tab closed");
+    });
 
     return () => {
       sock.close(1000, "app unmount");

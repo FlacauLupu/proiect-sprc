@@ -23,57 +23,25 @@ export default class MainScene extends Phaser.Scene {
   pipeTimer?: Phaser.Time.TimerEvent;
   selectedPipe: Phaser.GameObjects.Rectangle | null = null;
 
-  jumpQueue!: Denque;
-  playersOutQueue!: Denque;
-  seenEvents!: Set<number>;
+  jumpQueue: Denque = new Denque();
+  playersOutQueue: Denque = new Denque();
+  seenEvents: Set<number> = new Set<number>();
   lastEventIdProcessed = 0;
 
   socket!: WebSocket;
   socketBound = false;
 
+  isGameReady = false;
+
   constructor() {
     super({ key: "MainScene" });
   }
-
-  setupGame(data: any) {
-    this.currentPlayer = data.currentPlayer;
-    this.players = data.players;
-    this.socket = data.socket;
-
-    this.playersCount = this.players ? Object.keys(this.players).length : 1;
-
-    this.jumpQueue = new Denque();
-    this.playersOutQueue = new Denque();
-    this.seenEvents = new Set<number>();
-  }
+  enEvents = new Set<number>();
 
   init(data: any) {
-    this.setupGame(data);
-
-    let tempPlayer = sessionStorage.getItem("player");
-    let tempPlayers = sessionStorage.getItem("players");
-
-    if (tempPlayer && tempPlayers) {
-      const parsedCurrent: Player = JSON.parse(tempPlayer);
-      const parsedPlayers: Array<Player> = JSON.parse(tempPlayers);
-
-      this.players = {};
-      parsedPlayers.forEach((p) => {
-        this.players[p.id] = { playerId: p.id, bird: null as any };
-      });
-
-      this.currentPlayer = {
-        playerId: parsedCurrent.id,
-        bird: null as any,
-      };
-      console.log(
-        "INIT DATA:" +
-          JSON.stringify(this.players) +
-          JSON.stringify(this.currentPlayer),
-      );
-
-      this.socket = initializeHandshake();
-    }
+    this.socket = data.socket;
+    // this.currentPlayer = data.currentPlayer;
+    // this.players = data.players;
   }
 
   preload() {
@@ -92,7 +60,7 @@ export default class MainScene extends Phaser.Scene {
     g.destroy();
   }
 
-  create() {
+  setupGame() {
     if (this.socket && !this.socketBound) {
       checkInGameEvents(
         this.socket,
@@ -102,6 +70,39 @@ export default class MainScene extends Phaser.Scene {
       );
 
       this.socketBound = true;
+    }
+
+    const currentPlayerRaw = sessionStorage.getItem("player");
+    const playersRaw = sessionStorage.getItem("players");
+
+    try {
+      if (!currentPlayerRaw || !playersRaw) {
+        console.log("Game stats are not defined");
+        this.time.delayedCall(100, () => this.setupGame());
+        return;
+      }
+      this.isGameReady = true;
+
+      const parsedCurrentPlayer = JSON.parse(currentPlayerRaw);
+      const parsedPlayers = JSON.parse(playersRaw);
+
+      this.players = {};
+
+      parsedPlayers.forEach((p: Player) => {
+        this.players[p.id] = {
+          playerId: p.id,
+          bird: null as any,
+        };
+      });
+
+      this.currentPlayer = {
+        playerId: parsedCurrentPlayer.id,
+        bird: null as any,
+      };
+
+      this.playersCount = this.players ? Object.keys(this.players).length : 1;
+    } catch (err) {
+      console.error("Invalid game state in storage");
     }
 
     const { width, height } = this.scale;
@@ -131,8 +132,7 @@ export default class MainScene extends Phaser.Scene {
       () => {
         if (this.socket) {
           dispatchPlayerJump(this.socket, this.currentPlayer.playerId);
-          console.log("dipatch jump");
-        }
+        } else console.log("SOCKET IS NULL");
       },
       this,
     );
@@ -149,19 +149,30 @@ export default class MainScene extends Phaser.Scene {
       loop: true,
     });
   }
+
+  create() {
+    console.log("MainScene CREATED");
+    this.setupGame();
+  }
   update() {
+    if (this.isGameReady) this.updateGame();
+    else console.log("Game is not ready");
+  }
+
+  updateGame() {
     while (!this.jumpQueue.isEmpty()) {
       const playerId = this.jumpQueue.shift();
-      console.log("Player that jumped: " + playerId);
 
       const player = this.players[playerId];
-      if (!player || !player.bird) continue;
+      if (!player || !player.bird) {
+        console.log("player is null");
+        continue;
+      }
 
       this.flap(player);
     }
 
     while (!this.playersOutQueue.isEmpty()) {
-      console.log("from server");
       const playerThatLeft = this.playersOutQueue.shift();
       this.players[playerThatLeft].bird.active = false;
       this.players[playerThatLeft].bird.setTint(0xff0000);
@@ -211,7 +222,6 @@ export default class MainScene extends Phaser.Scene {
     (bird.body as Phaser.Physics.Arcade.Body).setGravityY(800);
     bird.setCircle(12);
     player.bird = bird;
-    console.log(JSON.stringify(player.bird));
     return bird;
   }
 
@@ -316,7 +326,6 @@ export default class MainScene extends Phaser.Scene {
   }
 
   setPlayerDeath(player: PlayerState) {
-    console.log("player death called");
     if (this.socket) dispatchPlayerDeath(this.socket, player.playerId);
   }
 

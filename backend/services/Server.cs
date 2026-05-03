@@ -77,7 +77,10 @@ namespace Backend
             bool handshaked = false;
 
             lock (_lock)
+            {
                 _connectedClients.Add(client);
+                Console.WriteLine("CLIENT COUNT: " + _connectedClients.Count);
+            }
 
             try
             {
@@ -194,6 +197,7 @@ namespace Backend
             {
                 foreach (var client in _connectedClients)
                 {
+                    Console.WriteLine("Client: " + client.RemoteEndPoint);
                     if (client.Connected)
                     {
                         try { SendResponse(client, payload); }

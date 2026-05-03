@@ -1,5 +1,7 @@
+export const SERVER_HOSTNAME = "localhost";
+
 export const initializeHandshake = () => {
-  const websocket = new WebSocket("ws://localhost:8080");
+  const websocket = new WebSocket(`ws://${SERVER_HOSTNAME}:8080`);
 
   websocket.binaryType = "arraybuffer";
 

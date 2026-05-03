@@ -1,7 +1,7 @@
 import { useContext, useState } from "react";
 import { CMD_LOGIN, dispatchLogin } from "../utils/WebSocketCommands";
 import { SocketContext, ResponsesContext } from "../App.tsx";
-import checkResponse from "../utils/checkCommandResponse.ts";
+import { checkCommandResponseAsync } from "../utils/checkCommandResponse.ts";
 
 interface PlayerNameDialogueProps {
   setCurrentTab: React.Dispatch<React.SetStateAction<string>>;
@@ -36,7 +36,11 @@ const PlayerNameDialogue = ({ setCurrentTab }: PlayerNameDialogueProps) => {
     dispatchLogin(socket, name);
 
     try {
-      const response = await checkResponse(CMD_LOGIN, responsesRef);
+      const response = await checkCommandResponseAsync(
+        CMD_LOGIN,
+        responsesRef,
+        100,
+      );
 
       if (response) {
         setCurrentTab("menu");

@@ -6,7 +6,7 @@ import {
   dispatchLogout,
   dispatchPlayGame,
 } from "../utils/WebSocketCommands";
-import checkCommandResponse from "../utils/checkCommandResponse";
+import { checkCommandResponseAsync } from "../utils/checkCommandResponse";
 
 interface MenuProps {
   setCurrentTab: React.Dispatch<React.SetStateAction<string>>;
@@ -24,7 +24,11 @@ const Menu = ({ setCurrentTab }: MenuProps) => {
       const playerId = playerData.id;
 
       dispatchLogout(socket, playerId);
-      const response = await checkCommandResponse(CMD_LOGOUT, responsesRef);
+      const response = await checkCommandResponseAsync(
+        CMD_LOGOUT,
+        responsesRef,
+        100,
+      );
       if (response) {
         setCurrentTab("dialog");
         sessionStorage.removeItem("player");
@@ -41,7 +45,11 @@ const Menu = ({ setCurrentTab }: MenuProps) => {
       dispatchPlayGame(socket, playerId);
 
       try {
-        const response = await checkCommandResponse(CMD_PLAY, responsesRef);
+        const response = await checkCommandResponseAsync(
+          CMD_PLAY,
+          responsesRef,
+          100,
+        );
 
         if (response) {
           setCurrentTab("game");
