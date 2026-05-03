@@ -8,20 +8,27 @@ import {
   dispatchPlayerJump,
 } from "../utils/WebSocketCommands";
 import type { Player } from "../types/Player";
+import { Role } from "../types/Player";
 
 type BirdType = Phaser.Physics.Arcade.Sprite;
 
 export default class MainScene extends Phaser.Scene {
-  currentPlayer!: PlayerState;
-  players!: Record<number, PlayerState>;
+  currentPlayerState!: PlayerState;
+  players!: Record<number, Player>;
   playersCount!: number;
+  birds!: Record<number, PlayerState>;
+  hunter!: PlayerState;
 
   pipes!: Phaser.GameObjects.Group;
   pipeSeed!: seedrandom.PRNG;
+
   score = 0;
   scoreText!: Phaser.GameObjects.Text;
   pipeTimer?: Phaser.Time.TimerEvent;
   selectedPipe: Phaser.GameObjects.Rectangle | null = null;
+
+  rounds!: number;
+  currentRound!: number;
 
   jumpQueue: Denque = new Denque();
   playersOutQueue: Denque = new Denque();
@@ -60,6 +67,14 @@ export default class MainScene extends Phaser.Scene {
     g.destroy();
   }
 
+  setupRound() {
+    this.hunter = {
+      player: Object.values(this.players)[this.currentRound],
+      role: Role.HUNTER,
+      sprite: 
+    };
+  }
+
   setupGame() {
     if (this.socket && !this.socketBound) {
       checkInGameEvents(
@@ -86,12 +101,13 @@ export default class MainScene extends Phaser.Scene {
       const parsedCurrentPlayer = JSON.parse(currentPlayerRaw);
       const parsedPlayers = JSON.parse(playersRaw);
 
-      this.players = {};
+      this.birds = {};
 
       parsedPlayers.forEach((p: Player) => {
-        this.players[p.id] = {
-          playerId: p.id,
-          bird: null as any,
+        this.birds[p.id] = {
+         player: p,
+         role: Role.NONE,
+          sprite: null as any,
         };
       });
 
@@ -101,12 +117,15 @@ export default class MainScene extends Phaser.Scene {
         .join("");
       this.pipeSeed = seedrandom(seedBuilder);
 
-      this.currentPlayer = {
-        playerId: parsedCurrentPlayer.id,
-        bird: null as any,
+      this.currentPlayerState = {
+             player: parsedCurrentPlayer,
+         role: Role.NONE,
+          sprite: null as any,
       };
 
       this.playersCount = this.players ? Object.keys(this.players).length : 1;
+      this.rounds = this.playersCount;
+      this.currentRound = 1;
     } catch (err) {
       console.error("Invalid game state in storage");
     }
@@ -115,7 +134,7 @@ export default class MainScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, width, height);
 
     Object.values(this.players).forEach((player) => {
-      if (player.playerId !== this.currentPlayer.playerId)
+      if (player.id !== this.currentPlayerState.player.id)
         this.createBird(player, "enemy");
       else this.createBird(player, "player");
       this.pipes = this.add.group();
@@ -169,27 +188,27 @@ export default class MainScene extends Phaser.Scene {
     while (!this.jumpQueue.isEmpty()) {
       const playerId = this.jumpQueue.shift();
 
-      const player = this.players[playerId];
-      if (!player || !player.bird) {
+      const playerState = this.birds[playerId];
+      if (!playerState || !playerState.sprite || !(playerState.role === Role.BIRD)) {
         console.log("player is null");
         continue;
       }
 
-      this.flap(player);
+      this.flap(playerState);
     }
 
     while (!this.playersOutQueue.isEmpty()) {
       const playerThatLeft = this.playersOutQueue.shift();
-      this.players[playerThatLeft].bird.active = false;
-      this.players[playerThatLeft].bird.setTint(0xff0000);
+      this.birds[playerThatLeft].sprite.active = false;
+      this.birds[playerThatLeft].sprite.setTint(0xff0000);
 
       this.playersCount--;
       if (this.playersCount === 0) this.gameOver();
     }
 
-    Object.values(this.players).forEach((player) => {
-      player.bird.angle = Phaser.Math.Clamp(
-        (player.bird.body as Phaser.Physics.Arcade.Body).velocity.y / 6,
+    Object.values(this.birds).forEach((bird) => {
+      bird.sprite.angle = Phaser.Math.Clamp(
+        (bird.sprite.body as Phaser.Physics.Arcade.Body).velocity.y / 6,
         -20,
         90,
       );
@@ -197,6 +216,9 @@ export default class MainScene extends Phaser.Scene {
 
     this.pipes.getChildren().forEach((pipe: any) => {
       if (pipe.getData("scored")) return;
+
+      if ()
+
       if (pipe.x + pipe.width < this.currentPlayer.bird.x) {
         if (pipe.y > this.currentPlayer.bird.y) {
           this.score += 1;
@@ -222,24 +244,32 @@ export default class MainScene extends Phaser.Scene {
     });
   }
 
+  executePowerUp() {}
+
   createBird(player: PlayerState, type: string) {
     const bird = this.physics.add.sprite(220, this.scale.height / 2, type);
     bird.setCollideWorldBounds(true);
     (bird.body as Phaser.Physics.Arcade.Body).setGravityY(800);
     bird.setCircle(12);
-    player.bird = bird;
+    player.sprite = bird;
     return bird;
   }
 
-  flap(player: PlayerState) {
-    player.bird.setVelocityY(-350);
+  createHunter(player: PlayerState) {
+    // de modificat appereance-ul hunterului
+
+     player.sprite = this.physics.add.sprite(0, 0,"hunter")
+  }
+
+  flap(playerState: PlayerState) {
+    playerState.sprite.setVelocityY(-350);
     this.tweens.add({
-      targets: player.bird,
+      targets: playerState.sprite,
       angle: -20,
       duration: 100,
     });
-    if (player.bird.y <= 0 || player.bird.y >= this.scale.height)
-      this.setPlayerDeath(player);
+    if (playerState.sprite.y <= 0 || playerState.sprite.y >= this.scale.height)
+      this.setPlayerDeath(playerState);
   }
 
   spawnPipes() {
@@ -334,8 +364,8 @@ export default class MainScene extends Phaser.Scene {
     }
   }
 
-  setPlayerDeath(player: PlayerState) {
-    if (this.socket) dispatchPlayerDeath(this.socket, player.playerId);
+  setPlayerDeath(playerState: PlayerState) {
+    if (this.socket) dispatchPlayerDeath(this.socket, playerState.player.id);
   }
 
   gameOver() {

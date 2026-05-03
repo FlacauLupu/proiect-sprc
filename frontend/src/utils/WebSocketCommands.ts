@@ -10,11 +10,21 @@ export const CMD_QUIT = 4;
 export const CMD_JUMP = 6;
 export const CMD_DEATH = 7;
 
+// Powerup Commands
+export const CMD_GRAVITY = 8;
+export const CMD_MIRROR = 9;
+export const CMD_MADNESS = 10;
+
 // Updates
 export const UPD_LOGIN = 1;
 export const UPD_START = 5;
 export const UPD_PLAYER_JUMPED = 6;
 export const UPD_PLAYER_REMOVED = 7;
+
+// Powerup Updates
+export const UPD_GRAVITY = 8;
+export const UPD_MIRROR = 9;
+export const UPD_MADNESS = 10;
 
 const SIZEOF_BYTES_COUNTER = 2;
 const SIZEOF_COMMAND = 1;
@@ -78,6 +88,14 @@ export const dispatchQuitGame = (socket: WebSocket, playerId: number) => {
 };
 
 export const dispatchPlayerJump = (socket: WebSocket, playerId: number) => {
+  const buffer = new ArrayBuffer(2);
+  const view = new DataView(buffer);
+
+  view.setUint16(0, playerId, false);
+  dispatchCommand(socket, CMD_JUMP, buffer);
+};
+
+export const dispatchPlayerPowerUp = (socket: WebSocket, playerId: number) => {
   const buffer = new ArrayBuffer(2);
   const view = new DataView(buffer);
 
@@ -240,32 +258,25 @@ export function decodeResponse(responseBuffer: ArrayBuffer): ResponseType {
 export function decodeData(responseId: number, data: Uint8Array<ArrayBuffer>) {
   if (data.byteLength === 0) throw new Error("Data is empty!");
 
-  switch (responseId) {
-    case CMD_LOGIN:
-      return parsePlayerPayload(data);
-
-    case UPD_START:
-      return parsePlayersPayload(data);
-
-    case UPD_PLAYER_JUMPED:
-      if (data.byteLength == 2)
-        return new DataView(
-          data.buffer,
-          data.byteOffset,
-          data.byteLength,
-        ).getInt16(0, false);
-      throw new Error("Invalid data length for playerId.");
-
-    case UPD_PLAYER_REMOVED:
-      if (data.byteLength == 2)
-        return new DataView(
-          data.buffer,
-          data.byteOffset,
-          data.byteLength,
-        ).getInt16(0, false);
-      throw new Error("Invalid data length for playerId.");
-
-    default:
-      throw new Error("Invalid responseId.");
+  if ([UPD_LOGIN, UPD_START].includes(responseId))
+    return parsePlayerPayload(data);
+  else if (
+    [
+      UPD_PLAYER_JUMPED,
+      UPD_PLAYER_REMOVED,
+      UPD_GRAVITY,
+      UPD_MIRROR,
+      UPD_MADNESS,
+    ].includes(responseId)
+  ) {
+    if (data.byteLength == 2)
+      return new DataView(
+        data.buffer,
+        data.byteOffset,
+        data.byteLength,
+      ).getInt16(0, false);
+    throw new Error("Invalid data length for playerId.");
   }
+
+  throw new Error("Invalid responseId.");
 }

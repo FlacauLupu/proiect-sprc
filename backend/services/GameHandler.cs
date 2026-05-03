@@ -8,6 +8,9 @@ namespace Backend
         public static Dictionary<short, PlayerState> playersDict = new();
         public static GameState gameState = GameState.Stopped;
 
+        public static int roundsCount;
+        public static int currentRound;
+
 
         public static void AddPlayer(Player player)
         {
@@ -29,6 +32,10 @@ namespace Backend
 
                 CommandHandler.ExecuteCommand(CommandType.Broadcast, resposeBuffer, null);
                 gameState = GameState.Running;
+
+                roundsCount = playersDict.Count;
+                currentRound = 1;
+
                 Console.WriteLine("Game is starting!");
             }
             else Console.WriteLine("Player count: " + playersDict.Count);
@@ -59,8 +66,38 @@ namespace Backend
             if (playersDict.TryGetValue(playerId, out var player))
             {
                 player.alive = false;
+                if (playersDict.Count(kv => kv.Value.alive) == 1)
+                {
+                    if (currentRound++ == roundsCount) gameState = GameState.Stopped;
+                    else
+                    {
+                        gameState = GameState.Idle;
+
+                        Console.WriteLine("Round ended");
+
+                        foreach (var kv in playersDict)
+                            kv.Value.alive = true;
+
+                        gameState = GameState.Running;
+
+                    }
+
+                }
                 Console.WriteLine("Player died: " + playerId);
             }
+
+        }
+
+        public static bool CheckAndSpendPlayerBalance(short playerId, int amount)
+        {
+            if (playersDict.TryGetValue(playerId, out var val))
+            {
+                if (val.player.Coins - amount < 0) return false;
+
+                val.player.Coins -= amount;
+                return true;
+            }
+            return false;
 
         }
 

@@ -148,6 +148,74 @@ namespace Backend
 
                         break;
 
+                    case GameCommands.PowerGravity:
+                        {
+                            if (message.data is null)
+                            {
+                                response = new Response(Commands.InvalidRequest, EventId.GetEventIdBuffer(), null);
+                                responseBuffer = Commands.CreateResponseBuffer(response);
+                                break;
+                            }
+
+                            playerId = (short)((message.data[0] << 8) | message.data[1]);
+
+                            int amountToSpend = 10;
+                            GameHandler.CheckAndSpendPlayerBalance(playerId, amountToSpend);
+
+                            commandType = CommandType.Broadcast;
+
+                            response = new Response(GameCommands.PowerGravity, EventId.GetEventIdBuffer(), message.data);
+                            responseBuffer = Commands.CreateResponseBuffer(response);
+
+                            break;
+                        }
+
+                    case GameCommands.PowerMirror:
+                        {
+                            if (message.data is null)
+                            {
+                                response = new Response(Commands.InvalidRequest, EventId.GetEventIdBuffer(), null);
+                                responseBuffer = Commands.CreateResponseBuffer(response);
+                                break;
+                            }
+
+                            playerId = (short)((message.data[0] << 8) | message.data[1]);
+
+
+                            int amountToSpend = 10;
+                            GameHandler.CheckAndSpendPlayerBalance(playerId, amountToSpend);
+
+                            commandType = CommandType.Broadcast;
+
+                            response = new Response(GameCommands.PowerMirror, EventId.GetEventIdBuffer(), message.data);
+                            responseBuffer = Commands.CreateResponseBuffer(response);
+
+                            break;
+                        }
+
+                    case GameCommands.PowerMadness:
+                        {
+                            if (message.data is null)
+                            {
+                                response = new Response(Commands.InvalidRequest, EventId.GetEventIdBuffer(), null);
+                                responseBuffer = Commands.CreateResponseBuffer(response);
+                                break;
+                            }
+
+                            playerId = (short)((message.data[0] << 8) | message.data[1]);
+
+
+                            int amountToSpend = 10;
+                            GameHandler.CheckAndSpendPlayerBalance(playerId, amountToSpend);
+
+                            commandType = CommandType.Broadcast;
+
+                            response = new Response(GameCommands.PowerMadness, EventId.GetEventIdBuffer(), message.data);
+                            responseBuffer = Commands.CreateResponseBuffer(response);
+
+                            break;
+                        }
+
                     case GameCommands.Die:
                         {
                             if (message.data is null)
@@ -158,12 +226,15 @@ namespace Backend
                             }
                             playerId = (short)((message.data[0] << 8) | message.data[1]);
 
+
+
                             if (!GameHandler.playersDict.ContainsKey(playerId))
                             {
                                 response = new Response(Commands.InvalidRequest, EventId.GetEventIdBuffer(), null);
                                 responseBuffer = Commands.CreateResponseBuffer(response);
                                 break;
                             }
+
 
                             commandType = CommandType.Broadcast;
 

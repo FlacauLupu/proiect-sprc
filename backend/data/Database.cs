@@ -105,10 +105,12 @@ namespace Backend
 
             var command = connection.CreateCommand();
             command.CommandText = @"
-        INSERT INTO Players (Name) VALUES ($name);
+        INSERT INTO Players (Name, Coins) VALUES ($name, $coins);
         SELECT last_insert_rowid();";
 
             command.Parameters.AddWithValue("$name", playerName);
+            command.Parameters.AddWithValue("$coins", 10);
+
 
             try
             {
