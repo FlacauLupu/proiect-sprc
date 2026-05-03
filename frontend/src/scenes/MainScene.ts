@@ -2,13 +2,12 @@ import Phaser from "phaser";
 import type { PlayerState } from "../types/Player";
 import Denque from "denque";
 import { checkInGameEvents } from "../utils/checkEvents";
+import seedrandom from "seedrandom";
 import {
   dispatchPlayerDeath,
   dispatchPlayerJump,
 } from "../utils/WebSocketCommands";
 import type { Player } from "../types/Player";
-
-import { initializeHandshake } from "../utils/WebSocketConnection";
 
 type BirdType = Phaser.Physics.Arcade.Sprite;
 
@@ -18,6 +17,7 @@ export default class MainScene extends Phaser.Scene {
   playersCount!: number;
 
   pipes!: Phaser.GameObjects.Group;
+  pipeSeed!: seedrandom.PRNG;
   score = 0;
   scoreText!: Phaser.GameObjects.Text;
   pipeTimer?: Phaser.Time.TimerEvent;
@@ -94,6 +94,12 @@ export default class MainScene extends Phaser.Scene {
           bird: null as any,
         };
       });
+
+      const seedBuilder = Object.keys(this.players)
+        .map(Number)
+        .sort((a, b) => a - b)
+        .join("");
+      this.pipeSeed = seedrandom(seedBuilder);
 
       this.currentPlayer = {
         playerId: parsedCurrentPlayer.id,
@@ -238,8 +244,11 @@ export default class MainScene extends Phaser.Scene {
 
   spawnPipes() {
     const { width, height } = this.scale;
-    const gap = Phaser.Math.Between(140, 220);
-    const centerY = Phaser.Math.Between(150, height - 150);
+
+    const rng = this.pipeSeed;
+
+    const gap = 140 + rng() * (220 - 140);
+    const centerY = 150 + rng() * (height - 300);
     const pipeWidth = 96;
     const pipeX = width + pipeWidth;
 
