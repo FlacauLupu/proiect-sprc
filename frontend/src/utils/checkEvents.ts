@@ -20,11 +20,14 @@ const checkInGameEvents = (
     try {
       const response = decodeResponse(e.data);
 
+      console.log("response: " + JSON.stringify(response));
+
       if (inGameSeenEvents.has(response.eventId)) return;
       inGameSeenEvents.add(response.eventId);
 
       if (response.responseId === UPD_PLAYER_JUMPED) {
         const playerId = decodeData(response.responseId, response.data);
+        console.log("player that jumped: " + playerId);
         jumpQueue.push(playerId);
         return;
       }

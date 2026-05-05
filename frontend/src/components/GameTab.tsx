@@ -1,8 +1,8 @@
 import { useRef, useEffect, useState, useContext } from "react";
 import { ResponsesContext, SocketContext } from "../App";
-import MainScene from "../scenes/MainScene";
+import MainScene from "../game/scenes/MainScene";
 import type { ResponseType } from "../types/ResponseType";
-import LobbyScene from "../scenes/LobbyScene";
+import LobbyScene from "../game/scenes/LobbyScene";
 import type { RefObject } from "react";
 
 interface GameProps {
@@ -44,8 +44,6 @@ const GameTab = ({ setCurrentTab }: GameProps) => {
 
     const game = new Phaser.Game(config);
     gameRef.current = game;
-
-    console.log("Phaser started");
 
     game.scene.start("LobbyScene", {
       responses: responsesRef,

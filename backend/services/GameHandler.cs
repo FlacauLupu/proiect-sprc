@@ -22,7 +22,7 @@ namespace Backend
                 gameState = GameState.Idle;
             }
 
-            if (playersDict.Count >= 2)
+            if (playersDict.Count >= 3)
             {
 
                 byte[] playerStatesBuffer = Utils.SerializePlayerStates(playersDict.Values.ToList());

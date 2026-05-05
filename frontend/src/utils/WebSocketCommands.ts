@@ -72,10 +72,8 @@ export const dispatchLogout = (socket: WebSocket, playerId: number) => {
 export const dispatchPlayGame = (socket: WebSocket, playerId: number) => {
   const buffer = new ArrayBuffer(2);
   const view = new DataView(buffer);
-  console.log(`Player Id is: ${playerId}`);
 
   view.setUint16(0, playerId, false);
-  console.log(`View is:  ${new Uint8Array(buffer)}`);
   dispatchCommand(socket, CMD_PLAY, buffer);
 };
 
@@ -122,24 +120,23 @@ export function parsePlayerPayload(payloadBytes: Uint8Array<ArrayBuffer>) {
 
   const id = view.getInt16(offset, false);
   offset += 2;
-  console.log("id:", id, "| offset now:", offset);
 
   const usernameLength = view.getInt32(offset, false);
   offset += 4;
 
-  console.log("usernameLength:", usernameLength, "| offset now:", offset);
-  console.log(
-    "remaining bytes:",
-    [...payloadBytes.slice(offset)]
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join(" "),
-  );
+  // console.log("usernameLength:", usernameLength, "| offset now:", offset);
+  // console.log(
+  //   "remaining bytes:",
+  //   [...payloadBytes.slice(offset)]
+  //     .map((b) => b.toString(16).padStart(2, "0"))
+  //     .join(" "),
+  // );
 
   const usernameBytes = payloadBytes.slice(offset, offset + usernameLength);
-  console.log(
-    "usernameBytes:",
-    [...usernameBytes].map((b) => b.toString(16).padStart(2, "0")).join(" "),
-  );
+  // console.log(
+  //   "usernameBytes:",
+  //   [...usernameBytes].map((b) => b.toString(16).padStart(2, "0")).join(" "),
+  // );
 
   const username = new TextDecoder("utf-8").decode(usernameBytes);
   offset += usernameLength;
@@ -214,7 +211,6 @@ export function decodeResponse(responseBuffer: ArrayBuffer): ResponseType {
   const errArr = new Uint8Array(responseBuffer);
 
   const view = new DataView(responseBuffer);
-  console.log(JSON.stringify(view));
   if (view.byteLength < SIZEOF_BYTES_COUNTER)
     throw new Error("The response is invalid, it has one byte!\n" + errArr);
 
@@ -222,9 +218,9 @@ export function decodeResponse(responseBuffer: ArrayBuffer): ResponseType {
 
   const responseLength = view.getUint16(offset, false);
 
-  console.log(
-    `[decodeResponse] responseLength from buffer: ${responseLength}, actual byteLength: ${view.byteLength}, buffer bytes: ${[...errArr].join(",")}`,
-  );
+  // console.log(
+  //   `[decodeResponse] responseLength from buffer: ${responseLength}, actual byteLength: ${view.byteLength}, buffer bytes: ${[...errArr].join(",")}`,
+  // );
 
   if (responseLength !== view.byteLength)
     throw new Error(
@@ -258,8 +254,8 @@ export function decodeResponse(responseBuffer: ArrayBuffer): ResponseType {
 export function decodeData(responseId: number, data: Uint8Array<ArrayBuffer>) {
   if (data.byteLength === 0) throw new Error("Data is empty!");
 
-  if ([UPD_LOGIN, UPD_START].includes(responseId))
-    return parsePlayerPayload(data);
+  if (responseId === UPD_LOGIN) return parsePlayerPayload(data);
+  else if (responseId === UPD_START) return parsePlayersPayload(data);
   else if (
     [
       UPD_PLAYER_JUMPED,
@@ -278,5 +274,5 @@ export function decodeData(responseId: number, data: Uint8Array<ArrayBuffer>) {
     throw new Error("Invalid data length for playerId.");
   }
 
-  throw new Error("Invalid responseId.");
+  throw new Error("Invalid responseId: " + responseId);
 }

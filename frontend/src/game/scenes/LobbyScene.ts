@@ -1,12 +1,12 @@
 import Phaser from "phaser";
-import type { ResponseType } from "../types/ResponseType";
+import type { ResponseType } from "../../types/ResponseType";
 import {
   checkCommandResponse,
   checkCommandResponseAsync,
-} from "../utils/checkCommandResponse";
-import { UPD_START } from "../utils/WebSocketCommands";
+} from "../../utils/checkCommandResponse";
+import { UPD_START } from "../../utils/WebSocketCommands";
 import type { RefObject } from "react";
-import type { Player, PlayerState } from "../types/Player";
+import type { Player, PlayerState } from "../../types/Player";
 
 export default class LobbyScene extends Phaser.Scene {
   constructor() {
@@ -23,20 +23,16 @@ export default class LobbyScene extends Phaser.Scene {
   init(data: any) {
     this.responses = data.responses;
     this.socket = data.socket;
-    console.log("DATA: " + JSON.stringify(data));
   }
   checkStartUpdate() {
     if (!this.responses) {
-      console.log("retruned from responses");
       return;
     }
     if (this.gameStarting) {
-      console.log("retruned from gamestarting");
       return;
     }
 
     const response = checkCommandResponse(UPD_START, this.responses);
-    console.log("RESPONSES:: " + JSON.stringify(this.responses.current));
 
     if (!response) return;
 
@@ -45,6 +41,7 @@ export default class LobbyScene extends Phaser.Scene {
     this.time.delayedCall(200, () => {
       this.scene.start("MainScene", {
         socket: this.socket,
+        responses: this.responses,
       });
     });
   }
