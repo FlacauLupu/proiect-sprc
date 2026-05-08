@@ -3,6 +3,7 @@ import {
   UPD_LOGIN,
   UPD_PLAYER_JUMPED,
   UPD_PLAYER_REMOVED,
+  UPD_SPAWN_PIPE,
   UPD_START,
   decodeData,
   decodeResponse,
@@ -14,7 +15,8 @@ const checkInGameEvents = (
   socket: WebSocket,
   jumpQueue: Denque,
   playersOutQueue: Denque,
-  inGameSeenEvents: Set<number>,
+  pipesSpawnQueue: Denque,
+  // inGameSeenEvents: Set<number>,
 ) => {
   const handler = (e: MessageEvent) => {
     try {
@@ -22,8 +24,8 @@ const checkInGameEvents = (
 
       console.log("response: " + JSON.stringify(response));
 
-      if (inGameSeenEvents.has(response.eventId)) return;
-      inGameSeenEvents.add(response.eventId);
+      // if (inGameSeenEvents.has(response.eventId)) return;
+      // inGameSeenEvents.add(response.eventId);
 
       if (response.responseId === UPD_PLAYER_JUMPED) {
         const playerId = decodeData(response.responseId, response.data);
@@ -35,6 +37,11 @@ const checkInGameEvents = (
       if (response.responseId === UPD_PLAYER_REMOVED) {
         const playerId = decodeData(response.responseId, response.data);
         playersOutQueue.push(playerId);
+      }
+
+      if (response.responseId === UPD_SPAWN_PIPE) {
+        // const pipeId = decodeData(response.responseId, response.data);
+        pipesSpawnQueue.push(response.eventId);
       }
     } catch (err: any) {
       console.error("Error: " + err.message);

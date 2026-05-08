@@ -1,4 +1,4 @@
-
+using System.Threading;
 using System.Net.Sockets;
 
 namespace Backend
@@ -10,6 +10,7 @@ namespace Backend
 
         public static int roundsCount;
         public static int currentRound;
+        public static Timer timer;        
 
 
         public static void AddPlayer(Player player)
@@ -22,7 +23,7 @@ namespace Backend
                 gameState = GameState.Idle;
             }
 
-            if (playersDict.Count >= 3)
+            if (playersDict.Count >= 2)
             {
 
                 byte[] playerStatesBuffer = Utils.SerializePlayerStates(playersDict.Values.ToList());
@@ -36,10 +37,20 @@ namespace Backend
                 roundsCount = playersDict.Count;
                 currentRound = 1;
 
+                timer = new Timer(GeneratePipe, null, 0, 1400);
                 Console.WriteLine("Game is starting!");
             }
             else Console.WriteLine("Player count: " + playersDict.Count);
 
+        }
+
+        public static void GeneratePipe(object? state)
+        {
+            Response response = new Response(GameCommands.SpawnPipe, EventId.GetEventIdBuffer(), null);
+
+            byte[] responseBuffer = Commands.CreateResponseBuffer(response);
+            
+            CommandHandler.ExecuteCommand(CommandType.Broadcast, responseBuffer, null);
         }
 
         public static void RemovePlayer(short playerId)

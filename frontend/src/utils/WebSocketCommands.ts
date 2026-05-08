@@ -20,6 +20,7 @@ export const UPD_LOGIN = 1;
 export const UPD_START = 5;
 export const UPD_PLAYER_JUMPED = 6;
 export const UPD_PLAYER_REMOVED = 7;
+export const UPD_SPAWN_PIPE = 11;
 
 // Powerup Updates
 export const UPD_GRAVITY = 8;
@@ -263,6 +264,7 @@ export function decodeData(responseId: number, data: Uint8Array<ArrayBuffer>) {
       UPD_GRAVITY,
       UPD_MIRROR,
       UPD_MADNESS,
+      UPD_SPAWN_PIPE,
     ].includes(responseId)
   ) {
     if (data.byteLength == 2)

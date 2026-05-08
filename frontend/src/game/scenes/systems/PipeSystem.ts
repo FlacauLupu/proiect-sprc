@@ -105,7 +105,7 @@ export class PipeSystem {
       b.y = selectedPipe.y;
       b.setSize(selectedPipe.width, selectedPipe.height);
       b.setVelocityX(-200);
-      // @ts-ignore
+      // @ts-expect-ignore
       b.updateFromGameObject();
     }
   }

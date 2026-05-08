@@ -7,7 +7,7 @@ namespace Backend
         public const byte PowerGravity = 8;
         public const byte PowerMirror = 9;
         public const byte PowerMadness = 10;
-
+        public const byte SpawnPipe = 11;
 
     }
 }

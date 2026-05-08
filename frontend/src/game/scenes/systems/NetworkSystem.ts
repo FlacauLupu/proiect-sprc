@@ -16,9 +16,10 @@ export class NetworkSystem {
   bindEvents(
     jumpQueue: Denque<number>,
     playersOutQueue: Denque<number>,
-    seenEvents: Set<number>,
+    // seenEvents: Set<number>,
+    pipesSpawnQueue: Denque<number>,
   ) {
-    checkInGameEvents(this.socket, jumpQueue, playersOutQueue, seenEvents);
+    checkInGameEvents(this.socket, jumpQueue, playersOutQueue, pipesSpawnQueue);
   }
 
   sendJump(playerId: number) {

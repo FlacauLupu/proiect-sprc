@@ -25,9 +25,10 @@ export default class MainScene extends Phaser.Scene {
   currentRound!: number;
 
   // Queues
+  pipesSpawnQueue: Denque = new Denque();
   jumpQueue: Denque = new Denque();
   playersOutQueue: Denque = new Denque();
-  seenEvents: Set<number> = new Set<number>();
+  // seenEvents: Set<number> = new Set<number>();
   lastEventIdProcessed = 0;
 
   // Socket
@@ -105,7 +106,8 @@ export default class MainScene extends Phaser.Scene {
       this.networkSystem.bindEvents(
         this.jumpQueue,
         this.playersOutQueue,
-        this.seenEvents,
+        this.pipesSpawnQueue,
+        // this.seenEvents,
       );
       this.socketBound = true;
     }
@@ -170,18 +172,22 @@ export default class MainScene extends Phaser.Scene {
 
     this.scoreSystem.init();
 
-    this.pipeTimer = this.time.addEvent({
-      delay: 1400,
-      callback: () => this.pipeSystem.spawn(this.pipes),
-      callbackScope: this,
-      loop: true,
-    });
+    // this.pipeTimer = this.time.addEvent({
+    //   delay: 1400,
+    //   callback: () => this.pipeSystem.spawn(this.pipes),
+    //   callbackScope: this,
+    //   loop: true,
+    // });
   }
   update() {
     if (this.isGameReady) this.updateGame();
   }
 
   private updateGame() {
+    while (!this.pipesSpawnQueue.isEmpty()) {
+      this.pipeSystem.spawn(this.pipes);
+      this.pipesSpawnQueue.pop();
+    }
     // Process jump queue
     while (!this.jumpQueue.isEmpty()) {
       const playerId = this.jumpQueue.shift();
