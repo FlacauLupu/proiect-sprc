@@ -10,7 +10,8 @@ namespace Backend
 
         public static int roundsCount;
         public static int currentRound;
-        public static Timer timer;        
+        public static Timer timer;
+        public static int playersReadyCount = 0;
 
 
         public static void AddPlayer(Player player)
@@ -37,7 +38,6 @@ namespace Backend
                 roundsCount = playersDict.Count;
                 currentRound = 1;
 
-                timer = new Timer(GeneratePipe, null, 0, 1400);
                 Console.WriteLine("Game is starting!");
             }
             else Console.WriteLine("Player count: " + playersDict.Count);

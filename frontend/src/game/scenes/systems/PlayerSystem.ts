@@ -22,7 +22,7 @@ export class PlayerSystem {
 
     playerState.sprite = bird;
     bird.setScale(0.2);
-
+    bird.setVisible(false);
     return bird;
   }
 

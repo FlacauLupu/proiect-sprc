@@ -29,7 +29,9 @@ const checkInGameEvents = (
 
       if (response.responseId === UPD_PLAYER_JUMPED) {
         const playerId = decodeData(response.responseId, response.data);
-        console.log("player that jumped: " + playerId);
+        console.log(
+          "player that jumped: " + playerId + "\nTime: " + Date.now(),
+        );
         jumpQueue.push(playerId);
         return;
       }

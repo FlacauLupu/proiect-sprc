@@ -9,6 +9,7 @@ export const CMD_PLAY = 3;
 export const CMD_QUIT = 4;
 export const CMD_JUMP = 6;
 export const CMD_DEATH = 7;
+export const CMD_READY = 12;
 
 // Powerup Commands
 export const CMD_GRAVITY = 8;
@@ -68,6 +69,14 @@ export const dispatchLogout = (socket: WebSocket, playerId: number) => {
 
   view.setUint16(0, playerId, false);
   dispatchCommand(socket, CMD_LOGOUT, buffer);
+};
+
+export const dispatchReady = (socket: WebSocket, playerId: number) => {
+  const buffer = new ArrayBuffer(2);
+  const view = new DataView(buffer);
+
+  view.setUint16(0, playerId, false);
+  dispatchCommand(socket, CMD_READY, buffer);
 };
 
 export const dispatchPlayGame = (socket: WebSocket, playerId: number) => {

@@ -8,6 +8,6 @@ namespace Backend
         public const byte PowerMirror = 9;
         public const byte PowerMadness = 10;
         public const byte SpawnPipe = 11;
-
+        public const byte Ready = 12;
     }
 }

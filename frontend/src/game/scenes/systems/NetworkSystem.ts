@@ -24,7 +24,7 @@ export class NetworkSystem {
 
   sendJump(playerId: number) {
     dispatchPlayerJump(this.socket, playerId);
-    console.log("JUMP" + playerId);
+    // console.log("JUMP" + playerId);
   }
 
   sendDeath(playerId: number) {

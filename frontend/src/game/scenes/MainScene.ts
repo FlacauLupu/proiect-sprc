@@ -10,6 +10,7 @@ import { ScoreSystem } from "./systems/ScoreSystem";
 import { CollisionSystem } from "./systems/CollisionSystem";
 import type { RefObject } from "react";
 import type { ResponseType } from "../../types/ResponseType";
+import { dispatchReady } from "../../utils/WebSocketCommands";
 
 export default class MainScene extends Phaser.Scene {
   // Game state
@@ -48,6 +49,8 @@ export default class MainScene extends Phaser.Scene {
   pipeTimer?: Phaser.Time.TimerEvent;
 
   responses!: RefObject<Array<ResponseType>>;
+
+  setupPlayersPosition = this.createSetupPlayersPosition();
 
   constructor() {
     super({ key: "MainScene" });
@@ -118,9 +121,9 @@ export default class MainScene extends Phaser.Scene {
       return;
     }
 
-    this.isGameReady = true;
-
     const { currentPlayer, players } = gameState;
+
+    dispatchReady(this.socket, currentPlayer.id);
 
     this.playersStates = this.initSystem.initializePlayers(players);
 
@@ -130,31 +133,35 @@ export default class MainScene extends Phaser.Scene {
 
     this.hunter = Object.values(this.playersStates)[this.currentRound - 1];
 
-    console.log("HUNTER IS: " + JSON.stringify(this.hunter));
+    // console.log("HUNTER IS: " + JSON.stringify(this.hunter));
 
     for (const id of Object.keys(this.playersStates)) {
       this.playersStates[Number(id)].role =
         Number(id) !== this.hunter.player.id ? Role.BIRD : Role.HUNTER;
     }
 
-    let birdType;
-
-    Object.values(this.playersStates).forEach((playerState) => {
-      if (playerState.role === Role.BIRD) {
-        birdType =
-          playerState.player.id === currentPlayer.id ? "hero" : "enemy";
-        this.playerSystem.createBird(playerState, birdType);
-      } else if (playerState.role === Role.HUNTER)
-        this.playerSystem.createHunter(playerState);
-    });
-
     this.currentPlayerState = this.playersStates[currentPlayer.id];
+
+    this.isGameReady = true;
 
     this.pipeSystem.initSeed(this.playersStates);
 
     this.initSystem.setupWorldBounds();
 
     this.pipes = this.add.group();
+
+    let birdType;
+
+    Object.values(this.playersStates).forEach((playerState) => {
+      if (playerState.role === Role.BIRD) {
+        birdType =
+          playerState.player.id === this.currentPlayerState.player.id
+            ? "hero"
+            : "enemy";
+        this.playerSystem.createBird(playerState, birdType);
+      } else if (playerState.role === Role.HUNTER)
+        this.playerSystem.createHunter(playerState);
+    });
 
     // Setup collisions
     this.collisionSystem.setupCollisions(this.playersStates, this.pipes);
@@ -179,6 +186,24 @@ export default class MainScene extends Phaser.Scene {
     //   loop: true,
     // });
   }
+
+  createSetupPlayersPosition() {
+    let hasBeenCalled = false;
+
+    return () => {
+      if (!hasBeenCalled) {
+        Object.values(this.playersStates).forEach((playerState) => {
+          if (playerState.role === Role.BIRD) {
+            playerState.sprite.x = 220;
+            playerState.sprite.y = this.scale.height / 2;
+            playerState.sprite.setVisible(true);
+          }
+        });
+        hasBeenCalled = true;
+      }
+    };
+  }
+
   update() {
     if (this.isGameReady) this.updateGame();
   }
@@ -187,6 +212,7 @@ export default class MainScene extends Phaser.Scene {
     while (!this.pipesSpawnQueue.isEmpty()) {
       this.pipeSystem.spawn(this.pipes);
       this.pipesSpawnQueue.pop();
+      this.setupPlayersPosition();
     }
     // Process jump queue
     while (!this.jumpQueue.isEmpty()) {
@@ -215,7 +241,7 @@ export default class MainScene extends Phaser.Scene {
   executePowerUp() {}
 
   gameOver() {
-    console.log("game over");
+    // console.log("game over");
     this.physics.pause();
     this.pipeTimer?.remove(false);
   }

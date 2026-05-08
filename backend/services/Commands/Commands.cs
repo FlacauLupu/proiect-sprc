@@ -13,7 +13,7 @@ namespace Backend
         public const byte InvalidRequest = 9;
 
 
-        public const string None = "None";
+        public const byte None = 9;
 
         public static byte[] CreateResponseBuffer(Response response)
         {

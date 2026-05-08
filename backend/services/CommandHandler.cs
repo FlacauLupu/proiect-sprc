@@ -244,6 +244,36 @@ namespace Backend
                             break;
                         }
 
+                        case GameCommands.Ready:
+                        {
+                            if (message.data is null)
+                            {
+                                response = new Response(Commands.InvalidRequest, EventId.GetEventIdBuffer(), null);
+                                responseBuffer = Commands.CreateResponseBuffer(response);
+                                break;
+                            }
+                            playerId = (short)((message.data[0] << 8) | message.data[1]);
+
+
+
+                            if (!GameHandler.playersDict.ContainsKey(playerId))
+                            {
+                                response = new Response(Commands.InvalidRequest, EventId.GetEventIdBuffer(), null);
+                                responseBuffer = Commands.CreateResponseBuffer(response);
+                                break;
+                            }
+
+                            GameHandler.playersReadyCount++;
+                            
+                            if (GameHandler.playersReadyCount == GameHandler.playersDict.Count)
+                            {
+                                GameHandler.timer = new Timer(GameHandler.GeneratePipe, null, 0, 1400);
+                            }
+                            response = new Response(Commands.None, EventId.GetEventIdBuffer(), null);
+                            responseBuffer = Commands.CreateResponseBuffer(response);
+                            break;
+                        }
+
                     default:
                         response = new Response(Commands.InvalidRequest, EventId.GetEventIdBuffer(), null);
                         responseBuffer = Commands.CreateResponseBuffer(response);
