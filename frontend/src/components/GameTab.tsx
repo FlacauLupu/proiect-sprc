@@ -59,7 +59,7 @@ const GameTab = ({ setCurrentTab }: GameProps) => {
   return (
     <div className="h-screen flex flex-col items-center justify-center">
       <div className="w-270 h-180 bg-black border-4 border-gray-800 rounded-xl shadow-2xl overflow-hidden">
-        <div className="w-full h-full flex items-center justify-center text-white text-sm opacity-50">
+        <div className="w-full h-full flex items-center justify-center text-white text-sm">
           <div ref={containerRef} className="w-full h-full" />
         </div>
       </div>
