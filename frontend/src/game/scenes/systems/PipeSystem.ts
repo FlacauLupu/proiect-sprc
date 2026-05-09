@@ -23,18 +23,21 @@ export class PipeSystem {
 
     const gap = 140 + rng() * (220 - 140);
     const centerY = 150 + rng() * (height - 300);
-    const pipeWidth = 96;
+    const pipeWidth = 40; // Mai subțire, potrivit pentru laser
     const pipeX = width + pipeWidth;
 
     const topHeight = centerY - gap / 2;
     const bottomHeight = height - (centerY + gap / 2);
 
+    // LASER DE SUS
     const top = this.scene.add
-      .rectangle(pipeX, 0, pipeWidth, topHeight, 0x00aa00)
-      .setOrigin(0, 0);
-    // @ts-ignore
+      .image(pipeX, 0, "laser")
+      .setOrigin(0, 0)
+      .setDisplaySize(pipeWidth, topHeight);
+
     this.scene.physics.add.existing(top);
     const topBody = top.body as Phaser.Physics.Arcade.Body;
+    topBody.setSize(pipeWidth, topHeight);
     topBody.setVelocityX(-200);
     topBody.setImmovable(true);
     topBody.allowGravity = false;
@@ -50,12 +53,15 @@ export class PipeSystem {
       this,
     );
 
+    // LASER DE JOS
     const bottom = this.scene.add
-      .rectangle(pipeX, centerY + gap / 2, pipeWidth, bottomHeight, 0x00aa00)
-      .setOrigin(0, 0);
-    // @ts-ignore
+      .image(pipeX, centerY + gap / 2, "laser")
+      .setOrigin(0, 0)
+      .setDisplaySize(pipeWidth, bottomHeight);
+
     this.scene.physics.add.existing(bottom);
     const bottomBody = bottom.body as Phaser.Physics.Arcade.Body;
+    bottomBody.setSize(pipeWidth, bottomHeight);
     bottomBody.setVelocityX(-200);
     bottomBody.setImmovable(true);
     bottomBody.allowGravity = false;
@@ -85,13 +91,14 @@ export class PipeSystem {
   }
 
   selectPipe(pipe: any) {
-    // Store selectedPipe in scene data
     const previousSelected = this.scene.data.get("selectedPipe");
     if (previousSelected) {
-      previousSelected.setStrokeStyle(0);
+      previousSelected.setStrokeStyle?.(0);
+      previousSelected.clearTint?.();
     }
     this.scene.data.set("selectedPipe", pipe);
-    pipe.setStrokeStyle(4, 0xffff00);
+    // TileSprite nu are setStrokeStyle, așa că folosim tint pentru a marca selecția
+    pipe.setTint?.(0xffff00);
   }
 
   moveSelected(deltaY: number) {
@@ -99,13 +106,11 @@ export class PipeSystem {
     if (!selectedPipe) return;
 
     selectedPipe.y += deltaY;
-    // @ts-ignore
     if (selectedPipe.body) {
       const b = selectedPipe.body as Phaser.Physics.Arcade.Body;
       b.y = selectedPipe.y;
       b.setSize(selectedPipe.width, selectedPipe.height);
       b.setVelocityX(-200);
-      // @ts-expect-ignore
       b.updateFromGameObject();
     }
   }
@@ -113,7 +118,8 @@ export class PipeSystem {
   clearSelection() {
     const selectedPipe = this.scene.data.get("selectedPipe");
     if (selectedPipe) {
-      selectedPipe.setStrokeStyle(0);
+      selectedPipe.setStrokeStyle?.(0);
+      selectedPipe.clearTint?.();
       this.scene.data.set("selectedPipe", null);
     }
   }

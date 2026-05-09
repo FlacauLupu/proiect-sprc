@@ -64,6 +64,7 @@ export default class MainScene extends Phaser.Scene {
   preload() {
     this.load.image("hero", "hero-removebg-preview.png");
     this.load.image("enemy", "enemy-removebg-preview.png");
+    this.load.image("laser", "laser.png");
     this.load.image("background", "gamebgr-removebg-preview.png");
 
     const g = this.add.graphics();
