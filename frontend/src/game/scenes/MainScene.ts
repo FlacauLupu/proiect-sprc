@@ -135,13 +135,13 @@ export default class MainScene extends Phaser.Scene {
     this.rounds = this.playersCount;
     this.currentRound = 1;
 
-    this.hunter = Object.values(this.playersStates)[this.currentRound - 1];
+    // this.hunter = Object.values(this.playersStates)[this.currentRound - 1];
 
     // console.log("HUNTER IS: " + JSON.stringify(this.hunter));
 
     for (const id of Object.keys(this.playersStates)) {
       this.playersStates[Number(id)].role =
-        Number(id) !== this.hunter.player.id ? Role.BIRD : Role.HUNTER;
+        true || Number(id) !== this.hunter.player.id ? Role.BIRD : Role.HUNTER;
     }
 
     this.currentPlayerState = this.playersStates[currentPlayer.id];

@@ -21,7 +21,7 @@ export class CollisionSystem {
             playerState.sprite,
             pipes,
             () => {
-              // this.handlePlayerDeath(playerState);
+              this.handlePlayerDeath(playerState);
             },
             undefined,
             this,
@@ -37,7 +37,7 @@ export class CollisionSystem {
           playerState.sprite.y > this.scene.scale.height ||
           playerState.sprite.y < 0
         ) {
-          // this.handlePlayerDeath(playerState);
+          this.handlePlayerDeath(playerState);
         }
     });
   }
