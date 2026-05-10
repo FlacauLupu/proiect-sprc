@@ -23,16 +23,13 @@ export class ScoreSystem {
   ) {
     if (currentPlayerState.role !== Role.BIRD) return;
     pipes.getChildren().forEach((pipe: any) => {
-      if (pipe.getData("scored")) return;
+      if (!pipe.getData("isScoreTrigger")) return; // skip pipe-ul de jos
+      if (pipe.getData("scored")) return; // deja punctat
 
       if (pipe.x + pipe.width < currentPlayerState.sprite.x) {
-        if (pipe.y > currentPlayerState.sprite.y) {
-          this.coins += 1;
-          this.scoreText.setText(`Coins: ${this.coins}`);
-          pipes.getChildren().forEach((p: any) => {
-            if (Math.abs(p.x - pipe.x) < 10) p.setData("coins", true);
-          });
-        }
+        pipe.setData("scored", true);
+        this.coins += 10;
+        this.scoreText.setText(`Coins: ${this.coins}`);
       }
     });
   }

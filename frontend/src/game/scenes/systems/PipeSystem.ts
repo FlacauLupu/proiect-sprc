@@ -39,6 +39,7 @@ export class PipeSystem {
     topBody.setImmovable(true);
     topBody.allowGravity = false;
     top.setData("scored", false);
+    top.setData("isScoreTrigger", true);
 
     top.setInteractive();
     top.on(
@@ -60,6 +61,7 @@ export class PipeSystem {
     bottomBody.setImmovable(true);
     bottomBody.allowGravity = false;
     bottom.setData("scored", false);
+    bottom.setData("isScoreTrigger", false);
 
     bottom.setInteractive();
     bottom.on(
