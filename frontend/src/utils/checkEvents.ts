@@ -10,12 +10,15 @@ import {
 } from "./WebSocketCommands";
 import type { RefObject } from "react";
 import type { ResponseType } from "../types/ResponseType";
+import type { InGameEvent } from "../types/InGameEvent";
+import type { Player } from "../types/Player";
 
 const checkInGameEvents = (
   socket: WebSocket,
-  jumpQueue: Denque,
-  playersOutQueue: Denque,
-  pipesSpawnQueue: Denque,
+  // jumpQueue: Denque,
+  // playersOutQueue: Denque,
+  // pipesSpawnQueue: Denque,
+  eventsQueue: InGameEvent[],
   // inGameSeenEvents: Set<number>,
 ) => {
   const handler = (e: MessageEvent) => {
@@ -26,25 +29,36 @@ const checkInGameEvents = (
 
       // if (inGameSeenEvents.has(response.eventId)) return;
       // inGameSeenEvents.add(response.eventId);
+      let data: number | Player[] | Player | null = null;
 
-      if (response.responseId === UPD_PLAYER_JUMPED) {
-        const playerId = decodeData(response.responseId, response.data);
-        console.log(
-          "player that jumped: " + playerId + "\nTime: " + Date.now(),
-        );
-        jumpQueue.push(playerId);
-        return;
+      if (response.data.byteLength !== 0) {
+        data = decodeData(response.responseId, response.data);
       }
 
-      if (response.responseId === UPD_PLAYER_REMOVED) {
-        const playerId = decodeData(response.responseId, response.data);
-        playersOutQueue.push(playerId);
-      }
+      eventsQueue.push({
+        eventId: response.eventId,
+        responseId: response.responseId,
+        data: data,
+      });
 
-      if (response.responseId === UPD_SPAWN_PIPE) {
-        // const pipeId = decodeData(response.responseId, response.data);
-        pipesSpawnQueue.push(response.eventId);
-      }
+      // if (response.responseId === UPD_PLAYER_JUMPED) {
+      //   const playerId = decodeData(response.responseId, response.data);
+      //   console.log(
+      //     "player that jumped: " + playerId + "\nTime: " + Date.now(),
+      //   );
+      //   jumpQueue.push(playerId);
+      //   return;
+      // }
+
+      // if (response.responseId === UPD_PLAYER_REMOVED) {
+      //   const playerId = decodeData(response.responseId, response.data);
+      //   playersOutQueue.push(playerId);
+      // }
+
+      // if (response.responseId === UPD_SPAWN_PIPE) {
+      //   // const pipeId = decodeData(response.responseId, response.data);
+      //   pipesSpawnQueue.push(response.eventId);
+      // }
     } catch (err: any) {
       console.error("Error: " + err.message);
     }
@@ -79,14 +93,15 @@ const checkOutGameEvents = (
           const player = decodeData(response.responseId, response.data);
 
           sessionStorage.setItem("player", JSON.stringify(player));
-        } else if (
-          response.responseId === UPD_START &&
-          response.data.byteLength > 2
-        ) {
-          const players = decodeData(response.responseId, response.data);
-
-          sessionStorage.setItem("players", JSON.stringify(players));
         }
+        // else if (
+        //   response.responseId === UPD_START &&
+        //   response.data.byteLength > 2
+        // ) {
+        //   const players = decodeData(response.responseId, response.data);
+
+        //   sessionStorage.setItem("players", JSON.stringify(players));
+        // }
       }
     } catch (err: any) {
       console.error("Error: " + err.message);

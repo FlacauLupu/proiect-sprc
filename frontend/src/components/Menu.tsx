@@ -40,23 +40,23 @@ const Menu = ({ setCurrentTab }: MenuProps) => {
     const playerRaw = sessionStorage.getItem("player");
 
     if (playerRaw !== null && socket !== null) {
-      const playerData = JSON.parse(playerRaw);
-      const playerId = playerData.id;
-      dispatchPlayGame(socket, playerId);
+      // const playerData = JSON.parse(playerRaw);
+      // const playerId = playerData.id;
+      // dispatchPlayGame(socket, playerId);
 
-      try {
-        const response = await checkCommandResponseAsync(
-          CMD_PLAY,
-          responsesRef,
-          100,
-        );
+      // try {
+      //   const response = await checkCommandResponseAsync(
+      //     CMD_PLAY,
+      //     responsesRef,
+      //     100,
+      //   );
 
-        if (response) {
-          setCurrentTab("game");
-        } else alert("Error starting the game.");
-      } catch (err: any) {
-        console.error(err.message);
-      }
+      //   if (response) {
+      setCurrentTab("game");
+      //   } else alert("Error starting the game.");
+      // } catch (err: any) {
+      //   console.error(err.message);
+      // }
     }
   };
 

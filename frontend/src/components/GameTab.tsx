@@ -1,9 +1,10 @@
-import { useRef, useEffect, useState, useContext } from "react";
+import { useRef, useEffect, useContext } from "react";
 import { ResponsesContext, SocketContext } from "../App";
 import MainScene from "../game/scenes/MainScene";
 import type { ResponseType } from "../types/ResponseType";
 import LobbyScene from "../game/scenes/LobbyScene";
 import type { RefObject } from "react";
+import { dispatchQuitGame } from "../utils/WebSocketCommands";
 
 interface GameProps {
   setCurrentTab: React.Dispatch<React.SetStateAction<string>>;
@@ -18,7 +19,7 @@ const GameTab = ({ setCurrentTab }: GameProps) => {
   const { responsesRef } = useContext(ResponsesContext);
   const socket = useContext(SocketContext);
 
-  const gameStateRef = useRef<GameState | null>(null);
+  // const gameStateRef = useRef<GameState | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
 
@@ -46,7 +47,6 @@ const GameTab = ({ setCurrentTab }: GameProps) => {
     gameRef.current = game;
 
     game.scene.start("LobbyScene", {
-      responses: responsesRef,
       socket: socket,
     });
 
@@ -67,11 +67,19 @@ const GameTab = ({ setCurrentTab }: GameProps) => {
       <div className="flex gap-3 mt-4">
         <button
           onClick={() => {
-            gameRef.current?.scene.stop("MainScene");
+            const playerRaw = sessionStorage.getItem("player");
+
+            if (socket && playerRaw) {
+              dispatchQuitGame(socket, JSON.parse(playerRaw).id);
+            } else
+              console.error(
+                "Error while quiting game socket or session storage is null/undefined.",
+              );
+            setCurrentTab("menu");
           }}
           className="px-6 py-2 bg-white text-black font-semibold rounded-lg shadow-md hover:bg-gray-100 active:scale-95 transition-all"
         >
-          Surrender
+          Quit
         </button>
       </div>
     </div>

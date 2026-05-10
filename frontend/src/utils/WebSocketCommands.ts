@@ -22,6 +22,7 @@ export const UPD_START = 5;
 export const UPD_PLAYER_JUMPED = 6;
 export const UPD_PLAYER_REMOVED = 7;
 export const UPD_SPAWN_PIPE = 11;
+export const UPD_GAME_NOT_READY = 13;
 
 // Powerup Updates
 export const UPD_GRAVITY = 8;

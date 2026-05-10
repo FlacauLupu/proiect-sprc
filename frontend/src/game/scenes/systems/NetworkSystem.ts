@@ -5,6 +5,7 @@ import {
   dispatchPlayerDeath,
   dispatchPlayerJump,
 } from "../../../utils/WebSocketCommands";
+import type { InGameEvent } from "../../../types/InGameEvent";
 
 export class NetworkSystem {
   socket!: WebSocket;
@@ -13,13 +14,12 @@ export class NetworkSystem {
     this.socket = socket;
   }
 
-  bindEvents(
-    jumpQueue: Denque<number>,
-    playersOutQueue: Denque<number>,
-    // seenEvents: Set<number>,
-    pipesSpawnQueue: Denque<number>,
-  ) {
-    checkInGameEvents(this.socket, jumpQueue, playersOutQueue, pipesSpawnQueue);
+  bindEvents(inGameEventsQueue: InGameEvent[]) {
+    // jumpQueue: Denque<number>,
+    // playersOutQueue: Denque<number>,
+    // // seenEvents: Set<number>,
+    // pipesSpawnQueue: Denque<number>,
+    return checkInGameEvents(this.socket, inGameEventsQueue);
   }
 
   sendJump(playerId: number) {

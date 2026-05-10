@@ -10,7 +10,7 @@ namespace Backend
 
         public static int roundsCount;
         public static int currentRound;
-        public static Timer timer;
+        public static Timer timer = new Timer(GameHandler.GeneratePipe, null, Timeout.Infinite, 1400);
         public static int playersReadyCount = 0;
 
 
@@ -27,20 +27,29 @@ namespace Backend
             if (playersDict.Count >= 2)
             {
 
-                byte[] playerStatesBuffer = Utils.SerializePlayerStates(playersDict.Values.ToList());
+                SendStart();
 
-                Response response = new Response(ManagerCommands.Start, EventId.GetEventIdBuffer(), playerStatesBuffer);
-                byte[] resposeBuffer = Commands.CreateResponseBuffer(response);
 
-                CommandHandler.ExecuteCommand(CommandType.Broadcast, resposeBuffer, null);
-                gameState = GameState.Running;
 
-                roundsCount = playersDict.Count;
-                currentRound = 1;
-
-                Console.WriteLine("Game is starting!");
             }
             else Console.WriteLine("Player count: " + playersDict.Count);
+
+        }
+
+        private static void SendStart()
+        {
+            byte[] playerStatesBuffer = Utils.SerializePlayerStates(playersDict.Values.ToList());
+
+            Response response = new Response(ManagerCommands.Start, EventId.GetEventIdBuffer(), playerStatesBuffer);
+            byte[] resposeBuffer = Commands.CreateResponseBuffer(response);
+
+            CommandHandler.ExecuteCommand(CommandType.Broadcast, resposeBuffer, null);
+            gameState = GameState.Running;
+
+            roundsCount = playersDict.Count;
+            currentRound = 1;
+
+            Console.WriteLine("Game is starting!");
 
         }
 
@@ -49,7 +58,7 @@ namespace Backend
             Response response = new Response(GameCommands.SpawnPipe, EventId.GetEventIdBuffer(), null);
 
             byte[] responseBuffer = Commands.CreateResponseBuffer(response);
-            
+
             CommandHandler.ExecuteCommand(CommandType.Broadcast, responseBuffer, null);
         }
 
@@ -61,12 +70,24 @@ namespace Backend
                 if (playersDict.Remove(playerId))
                 {
                     Console.WriteLine("Player was removed: " + playerId);
+                    playersReadyCount--;
 
-                    if (playersDict.Count == 0)
+                    if (playersReadyCount == 0)
+                    {
                         gameState = GameState.Stopped;
+                        timer.Change(Timeout.Infinite, Timeout.Infinite);
+                    }
 
-                    else if (playersDict.Count < 2)
+                    else if (playersReadyCount < 2)
+                    {
                         gameState = GameState.Idle;
+                        timer.Change(Timeout.Infinite, Timeout.Infinite);
+
+                        Response response = new Response(GameCommands.NotReady, EventId.GetEventIdBuffer(), null);
+                        byte[] responseBuffer = Commands.CreateResponseBuffer(response);
+                        CommandHandler.ExecuteCommand(CommandType.Broadcast, responseBuffer, null);
+
+                    }
                 }
             }
         }

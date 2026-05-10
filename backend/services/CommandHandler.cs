@@ -244,7 +244,7 @@ namespace Backend
                             break;
                         }
 
-                        case GameCommands.Ready:
+                    case GameCommands.Ready:
                         {
                             if (message.data is null)
                             {
@@ -264,10 +264,10 @@ namespace Backend
                             }
 
                             GameHandler.playersReadyCount++;
-                            
+
                             if (GameHandler.playersReadyCount == GameHandler.playersDict.Count)
                             {
-                                GameHandler.timer = new Timer(GameHandler.GeneratePipe, null, 0, 1400);
+                                GameHandler.timer.Change(0, 1400);
                             }
                             response = new Response(Commands.None, EventId.GetEventIdBuffer(), null);
                             responseBuffer = Commands.CreateResponseBuffer(response);
