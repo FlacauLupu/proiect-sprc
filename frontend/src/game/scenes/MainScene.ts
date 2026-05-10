@@ -10,14 +10,7 @@ import { ScoreSystem } from "./systems/ScoreSystem";
 import { CollisionSystem } from "./systems/CollisionSystem";
 import type { RefObject } from "react";
 import type { ResponseType } from "../../types/ResponseType";
-import {
-  dispatchReady,
-  UPD_GAME_NOT_READY,
-  UPD_PLAYER_JUMPED,
-  UPD_PLAYER_REMOVED,
-  UPD_SPAWN_PIPE,
-} from "../../utils/WebSocketCommands";
-import type { InGameEvent } from "../../types/InGameEvent";
+import { dispatchReady } from "../../utils/WebSocketCommands";
 
 export default class MainScene extends Phaser.Scene {
   // Game state
@@ -36,7 +29,6 @@ export default class MainScene extends Phaser.Scene {
   pipesSpawnQueue: Denque = new Denque();
   jumpQueue: Denque = new Denque();
   playersOutQueue: Denque = new Denque();
-  inGameEventsQueue: InGameEvent[] = [];
   // seenEvents: Set<number> = new Set<number>();
   lastEventIdProcessed = 0;
 
@@ -56,7 +48,7 @@ export default class MainScene extends Phaser.Scene {
   isGameReady = false;
   pipeTimer?: Phaser.Time.TimerEvent;
 
-  cleanUpEventsHandler!: any;
+  responses!: RefObject<Array<ResponseType>>;
 
   setupPlayersPosition = this.createSetupPlayersPosition();
 
@@ -66,6 +58,7 @@ export default class MainScene extends Phaser.Scene {
 
   init(data: any) {
     this.socket = data.socket;
+    this.responses = data.responses;
   }
 
   preload() {
@@ -113,8 +106,11 @@ export default class MainScene extends Phaser.Scene {
 
   private setupGame() {
     if (this.socket && !this.socketBound) {
-      this.cleanUpEventsHandler = this.networkSystem.bindEvents(
-        this.inGameEventsQueue,
+      this.networkSystem.bindEvents(
+        this.jumpQueue,
+        this.playersOutQueue,
+        this.pipesSpawnQueue,
+        // this.seenEvents,
       );
       this.socketBound = true;
     }
@@ -135,13 +131,13 @@ export default class MainScene extends Phaser.Scene {
     this.rounds = this.playersCount;
     this.currentRound = 1;
 
-    // this.hunter = Object.values(this.playersStates)[this.currentRound - 1];
+    this.hunter = Object.values(this.playersStates)[this.currentRound - 1];
 
     // console.log("HUNTER IS: " + JSON.stringify(this.hunter));
 
     for (const id of Object.keys(this.playersStates)) {
       this.playersStates[Number(id)].role =
-        true || Number(id) !== this.hunter.player.id ? Role.BIRD : Role.HUNTER;
+        Number(id) !== this.hunter.player.id ? Role.BIRD : Role.HUNTER;
     }
 
     this.currentPlayerState = this.playersStates[currentPlayer.id];
@@ -212,10 +208,25 @@ export default class MainScene extends Phaser.Scene {
     if (this.isGameReady) this.updateGame();
   }
 
-  updateGame() {
-    while (this.inGameEventsQueue.length > 0) {
-      const inGameEvent = this.inGameEventsQueue.shift();
-      if (inGameEvent) this.processEvent(inGameEvent);
+  private updateGame() {
+    while (!this.pipesSpawnQueue.isEmpty()) {
+      this.pipeSystem.spawn(this.pipes);
+      this.pipesSpawnQueue.pop();
+      this.setupPlayersPosition();
+    }
+    // Process jump queue
+    while (!this.jumpQueue.isEmpty()) {
+      const playerId = this.jumpQueue.shift();
+
+      this.playerSystem.flap(this.playersStates[playerId]);
+    }
+
+    // Process players out queue
+    while (!this.playersOutQueue.isEmpty()) {
+      const playerThatLeft = this.playersOutQueue.shift();
+      this.collisionSystem.markPlayerDead(this.playersStates[playerThatLeft]);
+      this.playersCount--;
+      if (this.playersCount === 0) this.gameOver();
     }
 
     this.playerSystem.update(this.playersStates);
@@ -227,39 +238,11 @@ export default class MainScene extends Phaser.Scene {
     this.collisionSystem.checkBoundaryCollisions(this.playersStates);
   }
 
-  processEvent(inGameEvent: InGameEvent) {
-    if (inGameEvent.responseId === UPD_PLAYER_JUMPED) {
-      if (typeof inGameEvent.data === "number")
-        this.playerSystem.flap(this.playersStates[inGameEvent.data]);
-    } else if (inGameEvent.responseId === UPD_SPAWN_PIPE) {
-      this.pipeSystem.spawn(this.pipes);
-      this.pipesSpawnQueue.pop();
-      this.setupPlayersPosition();
-    } else if (inGameEvent.responseId === UPD_PLAYER_REMOVED) {
-      if (typeof inGameEvent.data === "number") {
-        const playerThatLeft = inGameEvent.data;
-
-        this.collisionSystem.markPlayerDead(this.playersStates[playerThatLeft]);
-        this.playersCount--;
-        if (this.playersCount === 0) this.gameOver();
-      }
-    } else if (inGameEvent.responseId === UPD_GAME_NOT_READY) {
-      this.cleanUpEventsHandler();
-      this.scene.start("LobbyScene", {
-        socket: this.socket,
-      });
-    }
-  }
-
   executePowerUp() {}
 
   gameOver() {
     // console.log("game over");
     this.physics.pause();
     this.pipeTimer?.remove(false);
-  }
-
-  shutdown() {
-    this.cleanUpEventsHandler?.();
   }
 }

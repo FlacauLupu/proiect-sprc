@@ -49,6 +49,34 @@ export class CollisionSystem {
   markPlayerDead(playerState: PlayerState) {
     if (playerState.sprite) {
       playerState.sprite.active = false;
+      playerState.sprite.setVisible(false);
     }
+
+    const playerName =
+      playerState.player.username ?? `Player ${playerState.player.id}`;
+
+    const deathText = this.scene.add
+      .text(
+        this.scene.scale.width / 2,
+        this.scene.scale.height / 2,
+        `${playerName} has died!`,
+        {
+          fontSize: "48px",
+          color: "#ff0000",
+          fontStyle: "bold",
+          stroke: "#000000",
+          strokeThickness: 4,
+        },
+      )
+      .setOrigin(0.5)
+      .setDepth(1000);
+
+    this.scene.tweens.add({
+      targets: deathText,
+      alpha: 0,
+      duration: 500,
+      delay: 1500,
+      onComplete: () => deathText.destroy(),
+    });
   }
 }
