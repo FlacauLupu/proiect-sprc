@@ -61,19 +61,19 @@ const Menu = ({ setCurrentTab }: MenuProps) => {
   };
 
   return (
-    <div className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl flex flex-col items-center gap-6">
+    <div className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl flex flex-col items-center gap-6 w-96">
       <button
         onClick={handlePlayGame}
-        className="px-8 py-4 bg-yellow-400 text-black font-bold text-lg rounded-xl shadow-lg
-                    hover:bg-yellow-300 active:scale-95 transition-all duration-150"
+        className="w-full px-6 py-3 bg-yellow-400 text-black font-bold text-lg rounded-xl shadow-lg
+                  hover:bg-yellow-300 active:scale-95 transition-all duration-150"
       >
         Play
       </button>
 
       <button
         onClick={handleChangeName}
-        className="px-6 py-3 bg-sky-600 text-white font-semibold rounded-xl shadow-md
-                    hover:bg-sky-500 active:scale-95 transition-all duration-150"
+        className="w-full px-6 py-3 bg-sky-600 text-white font-semibold text-lg rounded-xl shadow-md
+                  hover:bg-sky-500 active:scale-95 transition-all duration-150"
       >
         Change name
       </button>

@@ -71,7 +71,8 @@ export default class MainScene extends Phaser.Scene {
   preload() {
     this.load.image("hero", "hero-removebg-preview.png");
     this.load.image("enemy", "enemy-removebg-preview.png");
-    this.load.image("background", "gamebgr-removebg-preview.png");
+    this.load.image("laser", "laser.png");
+    this.load.image("background", "gamebgr_v2.png");
 
     const g = this.add.graphics();
 
@@ -82,12 +83,11 @@ export default class MainScene extends Phaser.Scene {
   }
 
   create() {
-    this.add
-      .rectangle(0, 0, 1080, 720, 0xffffff)
-      .setOrigin(0, 0)
-      .setAlpha(0.04)
-      .setDepth(10000); // optional safety
-    const bg = this.add.image(0, 0, "background").setOrigin(0, 0);
+    // this.add
+    //   .rectangle(0, 0, 1080, 720, 0xffffff)
+    //   .setOrigin(0, 0)
+    //   .setAlpha(0.04)
+    //   .setDepth(10000); // optional safety
 
     // const scaleX = this.scale.width / bg.width;
     // const scaleY = this.scale.height / bg.height;
@@ -95,8 +95,13 @@ export default class MainScene extends Phaser.Scene {
     // const scale = Math.max(scaleX, scaleY);
     // bg.setScale(scale);
 
-    bg.displayWidth = this.scale.width;
-    bg.displayHeight = this.scale.height;
+    const bg = this.add.image(0, 0, "background").setOrigin(0, 0);
+
+    // Folosește dimensiunile reale ale jocului din config
+    bg.displayWidth = this.sys.game.config.width as number;
+    bg.displayHeight = this.sys.game.config.height as number;
+
+    bg.setTint(0xffffff); // default, fără efect
 
     this.initializeSystems();
     this.setupGame();
