@@ -10,6 +10,8 @@ namespace Backend
         public const byte SpawnPipe = 11;
         public const byte Ready = 12;
         public const byte NotReady = 13;
+        public const byte RoundReset = 14;
+        public const byte GameEnded = 15;
 
     }
 }

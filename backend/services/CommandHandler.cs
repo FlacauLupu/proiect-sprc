@@ -218,6 +218,7 @@ namespace Backend
 
                     case GameCommands.Die:
                         {
+                            RoundOutcome roundOutcome = RoundOutcome.None;
                             if (message.data is null)
                             {
                                 response = new Response(Commands.InvalidRequest, EventId.GetEventIdBuffer(), null);
@@ -235,11 +236,28 @@ namespace Backend
                                 break;
                             }
 
+                            roundOutcome = GameHandler.PlayerDie(playerId);
+
 
                             commandType = CommandType.Broadcast;
 
                             response = new Response(GameCommands.Die, EventId.GetEventIdBuffer(), message.data);
                             responseBuffer = Commands.CreateResponseBuffer(response);
+
+                            if (roundOutcome != RoundOutcome.None)
+                            {
+                                ExecuteCommand(commandType, responseBuffer, socket);
+                                if (roundOutcome == RoundOutcome.RoundReset)
+                                {
+                                    GameHandler.SendRoundReset();
+                                }
+                                else if (roundOutcome == RoundOutcome.GameEnded)
+                                {
+                                    GameHandler.SendGameEnded();
+                                    GameHandler.ResetGameState();
+                                }
+                                break;
+                            }
 
                             break;
                         }

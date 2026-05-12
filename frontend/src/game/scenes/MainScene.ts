@@ -2,19 +2,20 @@ import Phaser from "phaser";
 import type { PlayerState } from "../../types/Player";
 import Denque from "denque";
 import { Role } from "../../types/Player";
+import type { Player } from "../../types/Player";
 import { InitSystem } from "./systems/InitSystem";
 import { PipeSystem } from "./systems/PipeSystem";
 import { PlayerSystem } from "./systems/PlayerSystem";
 import { NetworkSystem } from "./systems/NetworkSystem";
 import { ScoreSystem } from "./systems/ScoreSystem";
 import { CollisionSystem } from "./systems/CollisionSystem";
-import type { RefObject } from "react";
-import type { ResponseType } from "../../types/ResponseType";
 import {
   dispatchReady,
   UPD_GAME_NOT_READY,
   UPD_PLAYER_JUMPED,
   UPD_PLAYER_REMOVED,
+  UPD_GAME_ENDED,
+  UPD_ROUND_RESET,
   UPD_SPAWN_PIPE,
 } from "../../utils/WebSocketCommands";
 import type { InGameEvent } from "../../types/InGameEvent";
@@ -55,6 +56,7 @@ export default class MainScene extends Phaser.Scene {
 
   // Game state flags
   isGameReady = false;
+  gameEnded = false;
   pipeTimer?: Phaser.Time.TimerEvent;
 
   cleanUpEventsHandler!: any;
@@ -265,6 +267,18 @@ export default class MainScene extends Phaser.Scene {
         this.playersCount--;
         if (this.playersCount === 0) this.gameOver();
       }
+    } else if (inGameEvent.responseId === UPD_ROUND_RESET) {
+      this.resetRoundState();
+    } else if (inGameEvent.responseId === UPD_GAME_ENDED) {
+      if (
+        inGameEvent.data &&
+        typeof inGameEvent.data === "object" &&
+        !Array.isArray(inGameEvent.data) &&
+        "username" in inGameEvent.data &&
+        "coins" in inGameEvent.data
+      ) {
+        this.showWinnerScreen(inGameEvent.data as Player);
+      }
     } else if (inGameEvent.responseId === UPD_GAME_NOT_READY) {
       this.cleanUpEventsHandler();
       this.scene.start("LobbyScene", {
@@ -279,6 +293,91 @@ export default class MainScene extends Phaser.Scene {
     // console.log("game over");
     this.physics.pause();
     this.pipeTimer?.remove(false);
+  }
+
+  private resetRoundState() {
+    if (this.gameEnded) return;
+
+    this.playersCount = Object.keys(this.playersStates).length;
+    this.currentRound += 1;
+    this.scoreSystem.reset();
+
+    this.pipes.getChildren().forEach((pipe: any) => {
+      if (pipe.body) {
+        (pipe.body as Phaser.Physics.Arcade.Body).destroy();
+      }
+      pipe.destroy();
+    });
+    this.pipes.clear(true, true);
+
+    Object.values(this.playersStates).forEach((playerState) => {
+      const sprite = playerState.sprite;
+      if (!sprite) return;
+
+      sprite.setActive(true);
+      sprite.setVisible(true);
+      sprite.setAlpha(1);
+      sprite.setAngle(0);
+      sprite.setVelocity(0, 0);
+      sprite.x = 220;
+      sprite.y = this.scale.height / 2;
+
+      const body = sprite.body as Phaser.Physics.Arcade.Body | undefined;
+      if (body) {
+        body.enable = true;
+        body.reset(sprite.x, sprite.y);
+        body.setVelocity(0, 0);
+      }
+    });
+
+    this.roundText?.setText(`Round: ${this.currentRound}/${this.rounds}`);
+    this.physics.resume();
+  }
+
+  private showWinnerScreen(winner: { username: string; coins: number }) {
+    if (this.gameEnded) return;
+
+    this.gameEnded = true;
+    this.isGameReady = false;
+    this.physics.pause();
+    this.cleanUpEventsHandler?.();
+
+    this.add
+      .rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.7)
+      .setOrigin(0, 0)
+      .setDepth(5000);
+
+    this.add
+      .text(
+        this.scale.width / 2,
+        this.scale.height / 2 - 50,
+        `Winner: ${winner.username}\nCoins: ${winner.coins}`,
+        {
+          fontSize: "40px",
+          color: "#ffffff",
+          fontStyle: "bold",
+          align: "center",
+        },
+      )
+      .setOrigin(0.5)
+      .setDepth(5001);
+
+    const replayButton = this.add
+      .text(this.scale.width / 2, this.scale.height / 2 + 50, "Replay", {
+        fontSize: "28px",
+        color: "#111111",
+        backgroundColor: "#f6c445",
+        padding: { left: 18, right: 18, top: 10, bottom: 10 },
+      })
+      .setOrigin(0.5)
+      .setDepth(5001)
+      .setInteractive({ useHandCursor: true });
+
+    replayButton.on("pointerdown", () => {
+      this.scene.start("LobbyScene", {
+        socket: this.socket,
+      });
+    });
   }
 
   shutdown() {

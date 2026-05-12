@@ -11,7 +11,7 @@ export class ScoreSystem {
 
   init() {
     this.coins = 0;
-    this.scoreText = this.scene.add.text(20, 20, "Score: 0", {
+    this.scoreText = this.scene.add.text(20, 20, "Coins: 0", {
       fontSize: "32px",
       color: "#fff",
     });
@@ -39,7 +39,7 @@ export class ScoreSystem {
   }
 
   reset() {
-    // this.score = 0;
-    // this.scoreText.setText("Score: 0");
+    this.coins = 0;
+    this.scoreText.setText("Coins: 0");
   }
 }

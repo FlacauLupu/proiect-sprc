@@ -23,6 +23,8 @@ export const UPD_PLAYER_JUMPED = 6;
 export const UPD_PLAYER_REMOVED = 7;
 export const UPD_SPAWN_PIPE = 11;
 export const UPD_GAME_NOT_READY = 13;
+export const UPD_ROUND_RESET = 14;
+export const UPD_GAME_ENDED = 15;
 
 // Powerup Updates
 export const UPD_GRAVITY = 8;
@@ -267,6 +269,7 @@ export function decodeData(responseId: number, data: Uint8Array<ArrayBuffer>) {
 
   if (responseId === UPD_LOGIN) return parsePlayerPayload(data);
   else if (responseId === UPD_START) return parsePlayersPayload(data);
+  else if (responseId === UPD_GAME_ENDED) return parsePlayerPayload(data);
   else if (
     [
       UPD_PLAYER_JUMPED,
