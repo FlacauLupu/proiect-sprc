@@ -235,8 +235,10 @@ export default class MainScene extends Phaser.Scene {
           strokeThickness: 3,
         },
       )
-      .setOrigin(1, 0) // aliniat la dreapta sus
+      .setOrigin(1, 0)
       .setDepth(1000);
+
+    this.showHunterAnnouncement();
 
     // this.pipeTimer = this.time.addEvent({
     //   delay: 1400,
@@ -318,6 +320,43 @@ export default class MainScene extends Phaser.Scene {
     }
   }
 
+  private showHunterAnnouncement() {
+    if (this.currentPlayerState.role !== Role.HUNTER) return;
+
+    const announcement = this.add
+      .text(
+        this.scale.width / 2,
+        this.scale.height / 2,
+        "You are the Hunter!",
+        {
+          fontSize: "56px",
+          color: "#ff3333",
+          fontStyle: "bold",
+          stroke: "#000000",
+          strokeThickness: 6,
+          align: "center",
+        },
+      )
+      .setOrigin(0.5)
+      .setDepth(4000)
+      .setAlpha(0);
+
+    this.tweens.add({
+      targets: announcement,
+      alpha: 1,
+      duration: 300,
+      onComplete: () => {
+        this.tweens.add({
+          targets: announcement,
+          alpha: 0,
+          duration: 1000,
+          delay: 2000,
+          onComplete: () => announcement.destroy(),
+        });
+      },
+    });
+  }
+
   executePowerUp() {}
 
   gameOver() {
@@ -362,6 +401,7 @@ export default class MainScene extends Phaser.Scene {
     });
 
     this.roundText?.setText(`Round: ${this.currentRound}/${this.rounds}`);
+    this.showHunterAnnouncement();
     this.physics.resume();
   }
 
