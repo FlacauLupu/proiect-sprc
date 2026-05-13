@@ -1,5 +1,4 @@
 // network/NetworkSystem.ts
-import Denque from "denque";
 import { checkInGameEvents } from "../../../utils/checkEvents";
 import {
   dispatchPlayerDeath,

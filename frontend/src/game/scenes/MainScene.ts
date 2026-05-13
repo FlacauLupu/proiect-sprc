@@ -17,6 +17,9 @@ import {
   UPD_GAME_ENDED,
   UPD_ROUND_RESET,
   UPD_SPAWN_PIPE,
+  CMD_GRAVITY,
+  CMD_MIRROR,
+  CMD_MADNESS,
 } from "../../utils/WebSocketCommands";
 import type { InGameEvent } from "../../types/InGameEvent";
 
@@ -194,7 +197,7 @@ export default class MainScene extends Phaser.Scene {
       () => {
         if (this.socket) {
           if (this.currentPlayerState.role === Role.HUNTER)
-            this.networkSystem.sendJump(currentPlayer.id);
+            this.networkSystem.sendPowerup(currentPlayer.id, CMD_GRAVITY);
         }
       },
       this,
@@ -204,7 +207,7 @@ export default class MainScene extends Phaser.Scene {
       () => {
         if (this.socket) {
           if (this.currentPlayerState.role === Role.HUNTER)
-            this.networkSystem.sendJump(currentPlayer.id);
+            this.networkSystem.sendPowerup(currentPlayer.id, CMD_MIRROR);
         }
       },
       this,
@@ -214,7 +217,7 @@ export default class MainScene extends Phaser.Scene {
       () => {
         if (this.socket) {
           if (this.currentPlayerState.role === Role.HUNTER)
-            this.networkSystem.sendJump(currentPlayer.id);
+            this.networkSystem.sendPowerup(currentPlayer.id, CMD_MADNESS);
         }
       },
       this,
