@@ -8,7 +8,7 @@ export class PlayerSystem {
     this.scene = scene;
   }
 
-  createBird(playerState: PlayerState, type: string) {
+  createBird(playerState: PlayerState, type: string, gravityY = 800) {
     const bird = this.scene.physics.add.sprite(
       220,
       this.scene.scale.height / 2,
@@ -16,7 +16,7 @@ export class PlayerSystem {
     );
 
     bird.setCollideWorldBounds(true);
-    (bird.body as Phaser.Physics.Arcade.Body).setGravityY(800);
+    (bird.body as Phaser.Physics.Arcade.Body).setGravityY(gravityY);
 
     bird.setCircle(12);
 
@@ -26,7 +26,7 @@ export class PlayerSystem {
     return bird;
   }
 
-  createHunter(playerState: PlayerState) {
+  createHunter(_playerState: PlayerState) {
     // playerState.sprite = this.scene.physics.add.sprite(0, 0, "hero");
     // playerState.sprite.active = false;
   }

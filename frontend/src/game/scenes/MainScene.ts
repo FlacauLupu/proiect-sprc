@@ -20,11 +20,13 @@ import {
   CMD_GRAVITY,
   CMD_MIRROR,
   CMD_MADNESS,
+  UPD_GRAVITY,
 } from "../../utils/WebSocketCommands";
 import type { InGameEvent } from "../../types/InGameEvent";
 
 export default class MainScene extends Phaser.Scene {
   // Game state
+  private readonly birdGravityY = 800;
   currentPlayerState!: PlayerState;
   playersStates!: Record<number, PlayerState>;
   playersCount!: number;
@@ -61,6 +63,8 @@ export default class MainScene extends Phaser.Scene {
   isGameReady = false;
   gameEnded = false;
   pipeTimer?: Phaser.Time.TimerEvent;
+  gravityEffectTimer?: Phaser.Time.TimerEvent;
+  gravityReversed = false;
 
   cleanUpEventsHandler!: any;
 
@@ -173,7 +177,7 @@ export default class MainScene extends Phaser.Scene {
           playerState.player.id === this.currentPlayerState.player.id
             ? "hero"
             : "enemy";
-        this.playerSystem.createBird(playerState, birdType);
+        this.playerSystem.createBird(playerState, birdType, this.birdGravityY);
       } else if (playerState.role === Role.HUNTER)
         this.playerSystem.createHunter(playerState);
     });
@@ -303,6 +307,8 @@ export default class MainScene extends Phaser.Scene {
         this.playersCount--;
         if (this.playersCount === 0) this.gameOver();
       }
+    } else if (inGameEvent.responseId === UPD_GRAVITY) {
+      this.reverseGravityTemporarily();
     } else if (inGameEvent.responseId === UPD_ROUND_RESET) {
       this.resetRoundState();
     } else if (inGameEvent.responseId === UPD_GAME_ENDED) {
@@ -360,17 +366,17 @@ export default class MainScene extends Phaser.Scene {
     });
   }
 
-  executePowerUp() {}
-
   gameOver() {
     // console.log("game over");
     this.physics.pause();
     this.pipeTimer?.remove(false);
+    this.clearGravityEffect();
   }
 
   private resetRoundState() {
     if (this.gameEnded) return;
 
+    this.clearGravityEffect();
     this.playersCount = Object.keys(this.playersStates).length;
     this.currentRound += 1;
     this.scoreSystem.reset();
@@ -456,5 +462,41 @@ export default class MainScene extends Phaser.Scene {
 
   shutdown() {
     this.cleanUpEventsHandler?.();
+    this.clearGravityEffect();
+  }
+
+  private setBirdGravity(gravityY: number) {
+    Object.values(this.playersStates ?? {}).forEach((playerState) => {
+      if (playerState.role !== Role.BIRD || !playerState.sprite?.body) return;
+
+      (playerState.sprite.body as Phaser.Physics.Arcade.Body).setGravityY(
+        gravityY,
+      );
+    });
+  }
+
+  private clearGravityEffect() {
+    this.gravityEffectTimer?.remove(false);
+    this.gravityEffectTimer = undefined;
+
+    if (!this.gravityReversed) return;
+
+    this.setBirdGravity(this.birdGravityY);
+    this.gravityReversed = false;
+  }
+
+  private reverseGravityTemporarily(duration = 5000) {
+    this.gravityEffectTimer?.remove(false);
+
+    if (!this.gravityReversed) {
+      this.setBirdGravity(-this.birdGravityY);
+      this.gravityReversed = true;
+    }
+
+    this.gravityEffectTimer = this.time.delayedCall(duration, () => {
+      this.setBirdGravity(this.birdGravityY);
+      this.gravityReversed = false;
+      this.gravityEffectTimer = undefined;
+    });
   }
 }
