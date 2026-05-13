@@ -4,6 +4,7 @@ import { checkInGameEvents } from "../../../utils/checkEvents";
 import {
   dispatchPlayerDeath,
   dispatchPlayerJump,
+  dispatchPlayerPowerup,
 } from "../../../utils/WebSocketCommands";
 import type { InGameEvent } from "../../../types/InGameEvent";
 
@@ -29,5 +30,9 @@ export class NetworkSystem {
 
   sendDeath(playerId: number) {
     dispatchPlayerDeath(this.socket, playerId);
+  }
+
+  sendPowerup(plyaerId: number, powerup: number) {
+    dispatchPlayerPowerup(this.socket, plyaerId, powerup);
   }
 }

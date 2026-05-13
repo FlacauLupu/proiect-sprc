@@ -106,12 +106,16 @@ export const dispatchPlayerJump = (socket: WebSocket, playerId: number) => {
   dispatchCommand(socket, CMD_JUMP, buffer);
 };
 
-export const dispatchPlayerPowerUp = (socket: WebSocket, playerId: number) => {
+export const dispatchPlayerPowerup = (
+  socket: WebSocket,
+  playerId: number,
+  powerup: number,
+) => {
   const buffer = new ArrayBuffer(2);
   const view = new DataView(buffer);
 
   view.setUint16(0, playerId, false);
-  dispatchCommand(socket, CMD_JUMP, buffer);
+  dispatchCommand(socket, powerup, buffer);
 };
 
 export const dispatchPlayerDeath = (socket: WebSocket, playerId: number) => {

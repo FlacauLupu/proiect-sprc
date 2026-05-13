@@ -189,6 +189,37 @@ export default class MainScene extends Phaser.Scene {
       this,
     );
 
+    this.input.keyboard?.on(
+      "Q",
+      () => {
+        if (this.socket) {
+          if (this.currentPlayerState.role === Role.HUNTER)
+            this.networkSystem.sendJump(currentPlayer.id);
+        }
+      },
+      this,
+    );
+    this.input.keyboard?.on(
+      "W",
+      () => {
+        if (this.socket) {
+          if (this.currentPlayerState.role === Role.HUNTER)
+            this.networkSystem.sendJump(currentPlayer.id);
+        }
+      },
+      this,
+    );
+    this.input.keyboard?.on(
+      "E",
+      () => {
+        if (this.socket) {
+          if (this.currentPlayerState.role === Role.HUNTER)
+            this.networkSystem.sendJump(currentPlayer.id);
+        }
+      },
+      this,
+    );
+
     this.scoreSystem.init();
 
     this.roundText = this.add
